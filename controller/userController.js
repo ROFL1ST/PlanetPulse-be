@@ -1,5 +1,5 @@
 const { default: mongoose } = require("mongoose");
-const { User, Verify } = require("../models/userModel");
+const { User, Verify, Forgot } = require("../models/userModel");
 const { sendEmail } = require("../mail");
 const bcrypt = require("bcrypt");
 const { generateRandomColor } = require("../colors/generate");
@@ -47,7 +47,7 @@ class userControl {
       body.default_color = randomColor;
       let newUser = await User.create(body);
       let kode = crypto.randomBytes(32).toString("hex");
-      const link = `${process.env.MAIL_CLIENT_URL}/verify/${kode}`;
+      const link = `${process.env.MAIL_CLIENT_URL}/user/verify/${kode}`;
       const context = {
         url: link,
       };
@@ -110,7 +110,7 @@ class userControl {
           },
         }
       );
-     
+
       return res.sendFile(__dirname + "/public/verification-success.html");
     } catch (error) {
       console.log(error);
@@ -125,7 +125,6 @@ class userControl {
   async login(req, res) {
     const ObjectId = mongoose.Types.ObjectId;
     try {
-    
       let body = req.body;
       let isUserExist = await User.findOne({
         username: body.username,
@@ -165,7 +164,7 @@ class userControl {
         },
         { $set: { token: token } }
       );
-     
+
       return res.status(200).json({
         status: "Success",
         token: token,
@@ -178,6 +177,242 @@ class userControl {
     }
   }
 
+  async auth(req, res) {
+    try {
+      const ObjectId = mongoose.Types.ObjectId;
+
+      const { authorization } = req.headers;
+      if (authorization === undefined)
+        return res
+          .status(401)
+          .json({ status: "Failed", message: "Token is required" });
+      const token = authorization.split(" ")[1];
+      jwt.verify(token, process.env.JWT_ACCESS_TOKEN, async (err, decode) => {
+        if (err) {
+          return res.status(401).json({
+            status: "Failed",
+            message: "Token is not valid",
+          });
+        }
+        const { id, email, name } = jwt.decode(token);
+        const newToken = jwt.sign(
+          { email, id, name },
+          process.env.JWT_ACCESS_TOKEN,
+          {
+            expiresIn: "7d",
+          }
+        );
+        await User.updateOne(
+          {
+            _id: new ObjectId(jwtDecode(token).id),
+          },
+          { $set: { token: newToken } }
+        );
+        return res.status(200).json({
+          status: "Success",
+          token: newToken,
+        });
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+      });
+    }
+  }
+
+  async forgot_password(req, res) {
+    try {
+      const ObjectId = mongoose.Types.ObjectId;
+
+      const { email } = req.body;
+      const data = await User.findOne({ email: email });
+      if (!data) {
+        return res.status(404).json({
+          status: "Failed",
+          message: "User's not found",
+        });
+      }
+      const check = await Forgot.findOne({ id_user: new ObjectId(data._id) });
+      if (check) {
+        return res.status(401).json({
+          status: "Failed",
+          message: "You have sent the code",
+        });
+      }
+      const code = Math.floor(1000 + Math.random() * 9000);
+      const today = new Date();
+      const expirationDate = new Date(today);
+      expirationDate.setDate(today.getDate() + 7);
+      let expired = expirationDate.toISOString();
+      const context = {
+        code: code,
+        name: data.name,
+        dateExpired: expired,
+      };
+      const mail = await sendEmail(
+        email,
+        "Forgot Password",
+        "forgot_password",
+        context
+      );
+      if (mail == " error") {
+        return res.status(422).json({
+          status: "Failed",
+          message: "Email's not sent",
+        });
+      }
+      await Forgot.create({
+        id_user: data._id,
+        code: code,
+        dateExpired: expired,
+      });
+      return res.status(200).json({
+        status: "Success",
+        message: "The code has been sent to your email",
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+      });
+    }
+  }
+  async resendEmail(req, res) {
+    try {
+      const { email } = req.body;
+      const data = await User.findOne({ email: email });
+      if (!data) {
+        return res.status(404).json({
+          status: "Failed",
+          message: "User's not found",
+        });
+      }
+
+      const code = Math.floor(1000 + Math.random() * 9000);
+      const today = new Date();
+      const expirationDate = new Date(today);
+      expirationDate.setDate(today.getDate() + 7);
+      let expired = expirationDate.toISOString();
+      const context = {
+        code: code,
+        name: data.name,
+        dateExpired: expired,
+      };
+      const mail = await sendEmail(
+        email,
+        "Forgot Password",
+        "forgot_password",
+        context
+      );
+      if (mail == " error") {
+        return res.status(422).json({
+          status: "Failed",
+          message: "Email's not sent",
+        });
+      }
+      await Forgot.deleteOne({
+        id_user: data._id,
+      });
+      await Forgot.create({
+        id_user: data._id,
+        code: code,
+        dateExpired: expired,
+      });
+      return res.status(200).json({
+        status: "Success",
+        message: "The code has been sent to your email",
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+      });
+    }
+  }
+  async verifyForgot(req, res) {
+    try {
+      const { email } = req.params;
+      const { code } = req.body;
+      const data = await User.findOne({ email: email });
+      if (!data) {
+        return res.status(404).json({
+          status: "Failed",
+          message: "User's not found",
+        });
+      }
+      const check = await Forgot.findOne({ code: code });
+      if (!check) {
+        return res.status(404).json({
+          status: "Failed",
+          message: "Code's not found",
+        });
+      }
+      if (check.code != code) {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Code's not valid",
+        });
+      }
+      // check expired
+      const currentTime = new Date().getTime();
+      if (currentTime > check.dateExpired) {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Code's expired. Please generate a new code",
+        });
+      }
+      return res
+        .status(200)
+        .json({ status: "Success", message: "success to verify code" });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: error,
+      });
+    }
+  }
+  async resetPassword(req, res) {
+    try {
+      let { code } = req.params;
+      let body = req.body;
+      const ObjectId = mongoose.Types.ObjectId;
+      const data = await User.findOne({ email: body.email });
+      if (!data) {
+        return res.status(404).json({
+          status: "Failed",
+          message: "User's not found",
+        });
+      }
+      const check = await Forgot.findOne({ code: code });
+      if (!check) {
+        return res.status(404).json({
+          status: "Failed",
+          message: "Code's not found",
+        });
+      }
+      if (check.code != code) {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Code's not valid",
+        });
+      }
+      await Forgot.deleteOne({ id_user: new ObjectId(data._id) });
+      body.password = bcrypt.hashSync(body.password, 10);
+      await User.updateOne({ _id: new ObjectId(data._id) });
+      return res.status(200).json({
+        status: "Success",
+        message: "Password's updated",
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: error,
+      });
+    }
+  }
 }
 
 module.exports = new userControl();
