@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon index.js"
+    "start": "nodemon index.js",
+    "deploy": "firebase deploy --only functions"
   },
   "keywords": [],
   "author": "",
@@ -21,7 +22,9 @@
     "express": "^4.18.2",
     "express-useragent": "^1.0.15",
     "express-validator": "^7.0.1",
-    "firebase-admin": "^12.0.0",
+    "firebase": "^10.7.1",
+    "firebase-admin": "^11.0.0",
+    "firebase-functions": "^4.5.0",
     "graphql": "^16.8.1",
     "graphql-subscriptions": "^2.0.0",
     "http": "^0.0.1-security",
@@ -40,5 +43,8 @@
     "streamifier": "^0.1.1",
     "subscriptions-transport-ws": "^0.11.0",
     "uuid": "^9.0.1"
+  },
+  "engines": {
+    "node": "18"
   }
 }

@@ -5,6 +5,7 @@ const cors = require("cors");
 const app = express();
 const { createServer } = require("http");
 const router = require("./routes/router");
+const functions = require("firebase-functions")
 const server = createServer(app);
 const port = process.env.PORT || 9000;
 const uri = process.env.DB_HOST;
@@ -21,6 +22,6 @@ mongoose
   });
 
 
-server.listen(port);
-
+// server.listen(port);
+exports.api = functions.https.onRequest(app)
 
