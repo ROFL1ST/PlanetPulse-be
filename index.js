@@ -11,7 +11,7 @@ const port = process.env.PORT || 9000;
 const uri = process.env.DB_HOST;
 app.use(cors());
 app.use(express.json());
-app.use("/api", router);
+app.use(router);
 mongoose
   .connect(uri)
   .then(() => {
