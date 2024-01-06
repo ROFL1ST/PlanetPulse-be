@@ -8,7 +8,6 @@ const userSchema = mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, "Please enter your password"],
       min: [8, "Minimum 8 characters"],
     },
     email: {
@@ -44,6 +43,10 @@ const userSchema = mongoose.Schema(
       enum: ["online", "offline"],
       default: "offline",
     },
+    googleId: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -67,24 +70,49 @@ const verifyModel = mongoose.Schema({
   },
 });
 const forgotModel = mongoose.Schema({
-    id_user: {
-      type: ObjectId,
-      ref: "users",
-      required: true,
-    },
-    code: {
-      type: String,
-      required: true,
-    },
-    dateExpired: {
-      type: Date,
-      required: true,
-    },
-  });
+  id_user: {
+    type: ObjectId,
+    ref: "users",
+    required: true,
+  },
+  code: {
+    type: String,
+    required: true,
+  },
+  dateExpired: {
+    type: Date,
+    required: true,
+  },
+});
+
+const adminModel = mongoose.Schema({
+  username: {
+    type: String,
+    require: true,
+  },
+  role: {
+    type: String,
+    enum: ["admin", "worker"],
+    default: "worker",
+  },
+  password: {
+    type: String,
+    require: true,
+  },
+  email: {
+    type: String,
+    lowercase: true,
+    trim: true,
+    //required: [true, 'Please provide an Email address'],
+  },
+  token: {
+    type: String,
+    default: null,
+  },
+});
 
 const User = mongoose.model("users", userSchema);
 const Verify = mongoose.model("veryfies", verifyModel);
 const Forgot = mongoose.model("forgots", forgotModel);
-
-
-module.exports = { User, Verify, Forgot };
+const Admin = mongoose.model("admins", adminModel);
+module.exports = { User, Verify, Forgot, Admin };

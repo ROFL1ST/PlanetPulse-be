@@ -1,5 +1,5 @@
 const { default: mongoose } = require("mongoose");
-const { User, Verify, Forgot } = require("../models/userModel");
+const { User, Verify, Forgot, Admin } = require("../models/userModel");
 const { sendEmail } = require("../mail");
 const bcrypt = require("bcrypt");
 const { generateRandomColor } = require("../colors/generate");
@@ -67,13 +67,13 @@ class userControl {
         id_user: new ObjectId(newUser._id),
         code: kode,
       });
-      res.status(200).json({
+      return res.status(200).json({
         status: "Success",
         message: "Verification has been sent to your email",
       });
     } catch (error) {
       console.log(error);
-      res.status(500).json({
+      return res.status(500).json({
         status: "Failed",
         message: "Something's wrong",
         error: error,
@@ -154,6 +154,7 @@ class userControl {
           email: isUserExist.email,
           id: isUserExist._id,
           name: isUserExist.name,
+          type: "user",
         },
         process.env.JWT_ACCESS_TOKEN,
         { expiresIn: "7d" }
@@ -413,6 +414,90 @@ class userControl {
       });
     }
   }
+
+  async initiateGoogle(req, res) {
+    try {
+      const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.CLIENT_ID}&redirect_uri=${process.env.REDIRECT_URI_LOCAL}&response_type=code&scope=profile email`;
+      res.redirect(url);
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: error,
+      });
+    }
+  }
+
+  async signGoogle(req, res) {
+    try {
+      // Passport.js middleware would have populated user information in req.user
+      const googleUser = req.user;
+
+      // Check if the Google user exists in your database
+      let isUserExist = await User.findOne({ googleId: googleUser.id });
+
+      // If the user doesn't exist, register them in your database
+      if (!isUserExist) {
+        isUserExist = await User.create({
+          googleId: googleUser.id,
+          username: googleUser.displayName || "GoogleUser", // Default to 'GoogleUser' if display name is not available
+          email: googleUser.emails[0].value,
+          // Other fields...
+        });
+      }
+
+      // Perform any additional checks or actions based on your requirements
+      // ...
+
+      // Check the user's verification status
+      if (!isUserExist.isVerified) {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Your email's not verified. Check your email",
+        });
+      }
+
+      // Verify the user's password (you can skip this for Google Sign-In)
+      // const verify = bcrypt.compareSync(body.password, isUserExist.password);
+      // if (!verify) {
+      //   return res.status(401).json({
+      //     status: 'Failed',
+      //     message: 'Your password is wrong',
+      //   });
+      // }
+
+      // Generate JWT token for the user
+      const token = jwt.sign(
+        {
+          email: isUserExist.email,
+          id: isUserExist._id,
+          name: isUserExist.name,
+        },
+        process.env.JWT_ACCESS_TOKEN,
+        { expiresIn: "7d" }
+      );
+
+      // Update user token in the database
+      await User.updateOne(
+        { _id: isUserExist._id },
+        { $set: { token: token } }
+      );
+
+      return res.status(200).json({
+        status: "Success",
+        token: token,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: error.message,
+      });
+    }
+  }
+
+  // admin
+ 
 }
 
 module.exports = new userControl();

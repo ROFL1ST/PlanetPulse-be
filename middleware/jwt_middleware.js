@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const { User } = require("../models/userModel");
+const { User, Admin } = require("../models/userModel");
 
 async function jwtMiddleWare(req, res, next) {
   const { authorization } = req.headers;
@@ -18,10 +18,13 @@ async function jwtMiddleWare(req, res, next) {
     } else {
       const user = await User.findOne({ email: decode.email });
       if (!user) {
-        return res.json({
-          status: "Failed",
-          message: "User's not found",
-        });
+        const admin = await Admin.findOne({ email: decode.email });
+        if (!admin) {
+          return res.json({
+            status: "Failed",
+            message: "User's not found",
+          });
+        }
       }
       req.username = decode.username;
       next();
