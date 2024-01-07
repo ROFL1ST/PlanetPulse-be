@@ -388,21 +388,29 @@ class userControl {
   }
   async resetPassword(req, res) {
     try {
-      let { code } = req.params;
+      let { code } = req.query;
       let body = req.body;
       const ObjectId = mongoose.Types.ObjectId;
-      const data = await User.findOne({ email: body.email });
-      if (!data) {
-        return res.status(404).json({
+      const check = await Forgot.findOne({ code: code });
+      if (!body.email || !body.password) {
+        return res.status(400).json({
           status: "Failed",
-          message: "User's not found",
+          message: "Please enter your password",
         });
       }
-      const check = await Forgot.findOne({ code: code });
       if (!check) {
         return res.status(404).json({
           status: "Failed",
           message: "Code's not found",
+        });
+      }
+      const data = await User.findOne({
+        $and: [{ email: body.email }, { _id: new ObjectId(check.id_user) }],
+      });
+      if (!data) {
+        return res.status(404).json({
+          status: "Failed",
+          message: "User's not found",
         });
       }
       if (check.code != code) {
@@ -413,7 +421,10 @@ class userControl {
       }
       await Forgot.deleteOne({ id_user: new ObjectId(data._id) });
       body.password = bcrypt.hashSync(body.password, 10);
-      await User.updateOne({ _id: new ObjectId(data._id) });
+      await User.updateOne(
+        { _id: new ObjectId(data._id) },
+        { password: body.password }
+      );
       return res.status(200).json({
         status: "Success",
         message: "Password's updated",
