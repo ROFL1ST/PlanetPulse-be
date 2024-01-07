@@ -111,8 +111,22 @@ const adminModel = mongoose.Schema({
   },
 });
 
+const userAcademyModel = mongoose.Schema({
+  id_lesson: {
+    type: mongoose.Types.ObjectId,
+    ref: "lessons",
+    required: true,
+  },
+  id_user: {
+    type: mongoose.Types.ObjectId,
+    ref: "users",
+    required: true,
+  },
+
+});
 const User = mongoose.model("users", userSchema);
+const UserAcademy = mongoose.model("user-academies", userAcademyModel)
 const Verify = mongoose.model("veryfies", verifyModel);
 const Forgot = mongoose.model("forgots", forgotModel);
 const Admin = mongoose.model("admins", adminModel);
-module.exports = { User, Verify, Forgot, Admin };
+module.exports = { User, Verify, Forgot, Admin, UserAcademy };

@@ -7,7 +7,13 @@ const {
   Category,
 } = require("../models/lessonModel");
 const { default: mongoose } = require("mongoose");
-
+const cloudinary = require("cloudinary").v2;
+require("dotenv").config();
+cloudinary.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.API_KEY_CLOUD,
+  api_secret: process.env.API_SECRET_CLOUD,
+});
 class LessonController {
   async getCategory(req, res) {
     try {
@@ -36,11 +42,26 @@ class LessonController {
           message: "Unauthorized",
         });
       }
+      if (req.file?.path != undefined) {
+        const { secure_url, public_id } = await cloudinary.uploader.upload(
+          req.file.path,
+          { folder: "/pulse/lessons" }
+        );
+        body.photo_url = secure_url;
+        body.public_id = public_id;
+      } else {
+        return res.status(400).json({
+          status: "Failed",
+          message: "Image is required.",
+        });
+      }
       const lesson = await Lesson.create({
         title: body.title,
         description: body.description,
         color_way: body.color_way,
         id_category: body.id_category,
+        photo_url: body.photo_url,
+        public_id: body.public_id,
       });
 
       console.log(body);
@@ -83,7 +104,7 @@ class LessonController {
             _id: "$_id",
             title: { $first: "$title" },
             description: { $first: "$description" },
-            color_way: { $first: "$color_way" },
+            photo_url: { $first: "$photo_url" },
             id_category: { $first: "$id_category" },
             createdAt: { $first: "$createdAt" },
             updatedAt: { $first: "$updatedAt" },

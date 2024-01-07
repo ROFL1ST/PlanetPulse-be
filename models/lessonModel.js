@@ -14,9 +14,16 @@ const lessonSchema = mongoose.Schema(
       type: String,
       required: true,
     },
-    color_way: {
+    photo_url: {
       type: String,
       default: null,
+      required: true
+    },
+    public_id: {
+      type: String,
+      default: null,
+      required: true
+
     },
     id_category: [
       {

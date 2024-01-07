@@ -1,13 +1,18 @@
 const router = require("express")();
 const LessonController = require("../controller/lessonController");
+const { uploader } = require("../middleware/file_upload");
 
-router.get("/category", LessonController.getCategory)
+router.get("/category", LessonController.getCategory);
 
-router.get("/", LessonController.getLesson)
-router.post("/post", LessonController.addLesson);
+router.get("/", LessonController.getLesson);
+router.post(
+  "/post",
+  uploader.single("photo_url"),
+  LessonController.addLesson
+);
 // stages
-router.post("/stages/post", LessonController.addStage)
-router.get("/stages/:id", LessonController.getStage)
+router.post("/stages/post", LessonController.addStage);
+router.get("/stages/:id", LessonController.getStage);
 
 // quizz
 router.get("/quiz/:id", LessonController.getQuiz);

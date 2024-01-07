@@ -1,12 +1,24 @@
 const { default: mongoose } = require("mongoose");
-const { User, Verify, Forgot, Admin } = require("../models/userModel");
+const {
+  User,
+  Verify,
+  Forgot,
+  Admin,
+  UserAcademy,
+} = require("../models/userModel");
 const { sendEmail } = require("../mail");
 const bcrypt = require("bcrypt");
 const { generateRandomColor } = require("../colors/generate");
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
+const cloudinary = require("cloudinary").v2;
 const crypto = require("crypto");
 const { default: jwtDecode } = require("jwt-decode");
+cloudinary.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.API_KEY_CLOUD,
+  api_secret: process.env.API_SECRET_CLOUD,
+});
 
 class userControl {
   async register(req, res) {
@@ -415,10 +427,43 @@ class userControl {
     }
   }
 
-  async initiateGoogle(req, res) {
+  async profle(req, res) {
     try {
-      const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.CLIENT_ID}&redirect_uri=${process.env.REDIRECT_URI_LOCAL}&response_type=code&scope=profile email`;
-      res.redirect(url);
+      const headers = req.headers;
+      const ObjectId = mongoose.Types.ObjectId;
+      let { id } = jwtDecode(headers.authorization);
+      const data = await User.aggregate([
+        {
+          $match: {
+            _id: new ObjectId(id),
+          },
+        },
+        {
+          $lookup: {
+            from: "user-academies",
+            localField: "_id",
+            foreignField: "id_user",
+            as: "academy",
+          },
+        },
+        {
+          $project: {
+            password: 0,
+            token: 0,
+          },
+        },
+      ]);
+
+      if (data.length == 0) {
+        return res.status(404).json({
+          status: "Failed",
+          message: "User's not found",
+        });
+      }
+      return res.status(200).json({
+        status: "Success",
+        data: data,
+      });
     } catch (error) {
       console.log(error);
       return res.status(500).json({
@@ -428,76 +473,266 @@ class userControl {
     }
   }
 
-  async signGoogle(req, res) {
+  async updateProfile(req, res) {
     try {
-      // Passport.js middleware would have populated user information in req.user
-      const googleUser = req.user;
-
-      // Check if the Google user exists in your database
-      let isUserExist = await User.findOne({ googleId: googleUser.id });
-
-      // If the user doesn't exist, register them in your database
-      if (!isUserExist) {
-        isUserExist = await User.create({
-          googleId: googleUser.id,
-          username: googleUser.displayName || "GoogleUser", // Default to 'GoogleUser' if display name is not available
-          email: googleUser.emails[0].value,
-          // Other fields...
-        });
-      }
-
-      // Perform any additional checks or actions based on your requirements
-      // ...
-
-      // Check the user's verification status
-      if (!isUserExist.isVerified) {
-        return res.status(401).json({
+      let headers = req.headers;
+      const ObjectId = mongoose.Types.ObjectId;
+      let id = jwtDecode(headers.authorization).id;
+      let body = req.body;
+      let checkUser = await User.find({ _id: new ObjectId(id) });
+      if (!checkUser) {
+        return res.status(404).json({
           status: "Failed",
-          message: "Your email's not verified. Check your email",
+          message: "User's not found",
         });
       }
-
-      // Verify the user's password (you can skip this for Google Sign-In)
-      // const verify = bcrypt.compareSync(body.password, isUserExist.password);
-      // if (!verify) {
-      //   return res.status(401).json({
-      //     status: 'Failed',
-      //     message: 'Your password is wrong',
-      //   });
-      // }
-
-      // Generate JWT token for the user
-      const token = jwt.sign(
-        {
-          email: isUserExist.email,
-          id: isUserExist._id,
-          name: isUserExist.name,
-        },
-        process.env.JWT_ACCESS_TOKEN,
-        { expiresIn: "7d" }
-      );
-
-      // Update user token in the database
+      if (req.file?.path != undefined) {
+        const { secure_url, public_id } = await cloudinary.uploader.upload(
+          req.file.path,
+          { folder: "/pulse/users" }
+        );
+        body.photo_profile = secure_url;
+        body.public_id = public_id;
+        if (checkUser.photo_profile != null) {
+          await cloudinary.uploader.destroy(checkUser.public_id);
+        }
+      } else {
+        body.photo_profile = checkUser.photo_profile;
+        body.public_id = checkUser.public_id;
+      }
       await User.updateOne(
-        { _id: isUserExist._id },
-        { $set: { token: token } }
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            username: body.username,
+            name: body.name,
+            photo_profile: body.photo_profile,
+            public_id: body.public_id,
+          },
+        }
       );
-
       return res.status(200).json({
         status: "Success",
-        token: token,
       });
     } catch (error) {
       console.log(error);
       return res.status(500).json({
         status: "Failed",
-        message: error.message,
+        message: error,
       });
     }
   }
 
-  // admin
- 
+  async searchUser(req, res) {
+    try {
+      const { page = 1, limit = 8, key } = req.query;
+      const size = (parseInt(page) - 1) * parseInt(limit);
+      let pipeline = [
+        {
+          $project: {
+            username: "$username",
+            name: "$name",
+            status: "$status",
+            photo_profile: "$photo_profile",
+          },
+        },
+        {
+          $skip: size,
+        },
+        {
+          $limit: parseInt(limit),
+        },
+      ];
+
+      // Add $match stage if key is present
+      if (key) {
+        pipeline.splice(1, 0, {
+          $match: {
+            $or: [
+              { name: { $regex: key, $options: "i" } },
+              { username: { $regex: key, $options: "i" } },
+            ],
+          },
+        });
+      }
+
+      let user = await User.aggregate(pipeline);
+      return res.status(200).json({
+        status: "Success",
+        data: user,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: error,
+      });
+    }
+  }
+
+  async addAcademy(req, res) {
+    try {
+      const ObjectId = mongoose.Types.ObjectId;
+      const body = req.body;
+
+      const headers = req.headers;
+      const id_user = jwtDecode(headers.authorization).id;
+      const user = await User.findOne({ _id: new ObjectId(id_user) });
+      if (!user) {
+        return res.status(404).json({
+          status: "Failed",
+          message: "User's not found",
+        });
+      }
+      const academy = await UserAcademy.findOne({
+        id_lesson: new ObjectId(body.id_lesson),
+      });
+      if (academy) {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Academy's already on your list",
+        });
+      }
+      body.id_user = id_user;
+      body.id_lesson = body.id_lesson;
+      const data = await UserAcademy.create(body);
+      return res.status(200).json({
+        status: "Success",
+        data: data,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: error,
+      });
+    }
+  }
+  async getAcademy(req, res) {
+    try {
+      const headers = req.headers;
+      const ObjectId = mongoose.Types.ObjectId;
+      const { id } = jwtDecode(headers.authorization);
+      const data = await UserAcademy.aggregate([
+        { $match: { id_user: new ObjectId(id) } },
+        {
+          $lookup: {
+            from: "lessons",
+            localField: "id_lesson",
+            foreignField: "_id",
+            as: "info_lesson",
+          },
+        },
+        { $unwind: "$info_lesson" },
+        {
+          $project: {
+            _id: 1, // Include other fields you want to keep from UserAcademy
+            // Include fields from the lessons collection
+            lessonId: "$info_lesson._id",
+            lessonTitle: "$info_lesson.title",
+            lessonDescription: "$info_lesson.description",
+            lessonPhotoUrl: "$info_lesson.photo_url",
+            lessonPublicId: "$info_lesson.public_id",
+            lessonCategories: "$info_lesson.id_category",
+            lessonCreatedAt: "$info_lesson.createdAt",
+            lessonUpdatedAt: "$info_lesson.updatedAt",
+            // Add more fields as needed
+          },
+        },
+      ]);
+
+      return res.status(200).json({
+        status: "Success",
+        data: data,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: error,
+      });
+    }
+  }
+  // async initiateGoogle(req, res) {
+  //   try {
+  //     const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.CLIENT_ID}&redirect_uri=${process.env.REDIRECT_URI_LOCAL}&response_type=code&scope=profile email`;
+  //     res.redirect(url);
+  //   } catch (error) {
+  //     console.log(error);
+  //     return res.status(500).json({
+  //       status: "Failed",
+  //       message: error,
+  //     });
+  //   }
+  // }
+
+  // async signGoogle(req, res) {
+  //   try {
+  //     // Passport.js middleware would have populated user information in req.user
+  //     const googleUser = req.user;
+
+  //     // Check if the Google user exists in your database
+  //     let isUserExist = await User.findOne({ googleId: googleUser.id });
+
+  //     // If the user doesn't exist, register them in your database
+  //     if (!isUserExist) {
+  //       isUserExist = await User.create({
+  //         googleId: googleUser.id,
+  //         username: googleUser.displayName || "GoogleUser", // Default to 'GoogleUser' if display name is not available
+  //         email: googleUser.emails[0].value,
+  //         // Other fields...
+  //       });
+  //     }
+
+  //     // Perform any additional checks or actions based on your requirements
+  //     // ...
+
+  //     // Check the user's verification status
+  //     if (!isUserExist.isVerified) {
+  //       return res.status(401).json({
+  //         status: "Failed",
+  //         message: "Your email's not verified. Check your email",
+  //       });
+  //     }
+
+  //     // Verify the user's password (you can skip this for Google Sign-In)
+  //     // const verify = bcrypt.compareSync(body.password, isUserExist.password);
+  //     // if (!verify) {
+  //     //   return res.status(401).json({
+  //     //     status: 'Failed',
+  //     //     message: 'Your password is wrong',
+  //     //   });
+  //     // }
+
+  //     // Generate JWT token for the user
+  //     const token = jwt.sign(
+  //       {
+  //         email: isUserExist.email,
+  //         id: isUserExist._id,
+  //         name: isUserExist.name,
+  //       },
+  //       process.env.JWT_ACCESS_TOKEN,
+  //       { expiresIn: "7d" }
+  //     );
+
+  //     // Update user token in the database
+  //     await User.updateOne(
+  //       { _id: isUserExist._id },
+  //       { $set: { token: token } }
+  //     );
+
+  //     return res.status(200).json({
+  //       status: "Success",
+  //       token: token,
+  //     });
+  //   } catch (error) {
+  //     console.log(error);
+  //     return res.status(500).json({
+  //       status: "Failed",
+  //       message: error.message,
+  //     });
+  //   }
+  // }
 }
 
 module.exports = new userControl();
