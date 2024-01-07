@@ -122,10 +122,69 @@ const userAcademyModel = mongoose.Schema({
     ref: "users",
     required: true,
   },
+});
 
+const userProgressSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User", // Assuming you have a User model
+    required: true,
+  },
+  lessonProgress: [
+    {
+      lessonId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Lesson", // Assuming you have a Lesson model
+        required: true,
+      },
+      completed: {
+        type: Boolean,
+        default: false,
+      },
+      stageProgress: [
+        {
+          stageId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Stage", // Assuming you have a Stage model
+            required: true,
+          },
+          completed: {
+            type: Boolean,
+            default: false,
+          },
+          quizProgress: [
+            {
+              quizId: {
+                type: mongoose.Schema.Types.ObjectId,
+              
+                required: true,
+              },
+              completed: {
+                type: Boolean,
+                default: false,
+              },
+              questionProgress: [
+                {
+                  questionId: {
+                    type: mongoose.Schema.Types.ObjectId,
+              
+                    required: true,
+                  },
+                  userAnswerIndex: {
+                    type: Number,
+                    default: -1, // -1 represents not answered yet
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ],
 });
 const User = mongoose.model("users", userSchema);
-const UserAcademy = mongoose.model("user-academies", userAcademyModel)
+const UserAcademy = mongoose.model("user-academies", userAcademyModel);
 const Verify = mongoose.model("veryfies", verifyModel);
 const Forgot = mongoose.model("forgots", forgotModel);
 const Admin = mongoose.model("admins", adminModel);
