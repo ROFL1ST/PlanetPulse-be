@@ -24,6 +24,7 @@ router.put(
 router.get("/search", jwtMiddleWare, userController.searchUser);
 router.post("/academy/post", jwtMiddleWare, userController.addAcademy);
 router.get("/academy", jwtMiddleWare, userController.getAcademy);
+router.put("/academy/:id", jwtMiddleWare, userController.updateAcademy);
 // router.get(
 //   "/auth/google",
 //   passport.authenticate("google", { scope: ["profile", "email"] }),

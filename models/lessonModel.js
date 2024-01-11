@@ -17,13 +17,12 @@ const lessonSchema = mongoose.Schema(
     photo_url: {
       type: String,
       default: null,
-      required: true
+      required: true,
     },
     public_id: {
       type: String,
       default: null,
-      required: true
-
+      required: true,
     },
     id_category: [
       {
@@ -61,6 +60,20 @@ const stagesSchema = mongoose.Schema(
   },
   { versionKey: false }
 );
+
+const stages_detailSchema = mongoose.Schema({
+  id_stages: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "stages",
+    required: true,
+    unique: true
+  },
+  content: {
+    type: String,
+    required: true,
+  },
+
+});
 
 const quizSchema = mongoose.Schema(
   {
@@ -108,6 +121,7 @@ const Category = mongoose.model("categories", categorySchema);
 const Lesson = mongoose.model("lessons", lessonSchema);
 const Quiz = mongoose.model("quizzes", quizSchema);
 const Stage = mongoose.model("stages", stagesSchema);
+const StageDetail = mongoose.model("stages-detail", stages_detailSchema);
 const Question = mongoose.model("questions", questionSchema);
 
-module.exports = { Category, Lesson, Quiz, Stage, Question };
+module.exports = { Category, Lesson, Quiz, Stage, StageDetail, Question };
