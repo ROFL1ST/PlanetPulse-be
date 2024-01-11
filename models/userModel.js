@@ -53,6 +53,20 @@ const userSchema = mongoose.Schema(
   }
 );
 
+const detailUserModel = mongoose.Schema({
+  id_user: {
+    type: mongoose.Types.ObjectId,
+    ref: "users",
+    required: true,
+  },
+  country: {
+    type: String,
+  },
+  address: {
+    type: String,
+  },
+});
+
 const verifyModel = mongoose.Schema({
   id_user: {
     type: ObjectId,
@@ -122,70 +136,52 @@ const userAcademyModel = mongoose.Schema({
     ref: "users",
     required: true,
   },
+  progress: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0,
+  },
 });
 
-const userProgressSchema = new mongoose.Schema({
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User", // Assuming you have a User model
+const userQuizModel = mongoose.Schema({
+  id_quiz: {
+    type: mongoose.Types.ObjectId,
+    ref: "quizzes",
     required: true,
   },
-  lessonProgress: [
-    {
-      lessonId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Lesson", // Assuming you have a Lesson model
-        required: true,
-      },
-      completed: {
-        type: Boolean,
-        default: false,
-      },
-      stageProgress: [
-        {
-          stageId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Stage", // Assuming you have a Stage model
-            required: true,
-          },
-          completed: {
-            type: Boolean,
-            default: false,
-          },
-          quizProgress: [
-            {
-              quizId: {
-                type: mongoose.Schema.Types.ObjectId,
-              
-                required: true,
-              },
-              completed: {
-                type: Boolean,
-                default: false,
-              },
-              questionProgress: [
-                {
-                  questionId: {
-                    type: mongoose.Schema.Types.ObjectId,
-              
-                    required: true,
-                  },
-                  userAnswerIndex: {
-                    type: Number,
-                    default: -1, // -1 represents not answered yet
-                  },
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-  ],
+  id_user: {
+    type: mongoose.Types.ObjectId,
+    ref: "users",
+    required: true,
+  },
+  progress: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0,
+  },
+  score: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0,
+  },
 });
 const User = mongoose.model("users", userSchema);
+const UserDetail = mongoose.model("user-detail", detailUserModel);
 const UserAcademy = mongoose.model("user-academies", userAcademyModel);
 const Verify = mongoose.model("veryfies", verifyModel);
 const Forgot = mongoose.model("forgots", forgotModel);
 const Admin = mongoose.model("admins", adminModel);
-module.exports = { User, Verify, Forgot, Admin, UserAcademy };
+const UserQuiz = mongoose.model("user-quizz", userQuizModel);
+
+module.exports = {
+  User,
+  UserDetail,
+  Verify,
+  Forgot,
+  Admin,
+  UserAcademy,
+  UserQuiz,
+};
