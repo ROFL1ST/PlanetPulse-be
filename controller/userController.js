@@ -639,19 +639,18 @@ class userControl {
           $project: {
             _id: 1, // Include other fields you want to keep from UserAcademy
             // Include fields from the lessons collection
-            lessonId: "$info_lesson._id",
-            lessonTitle: "$info_lesson.title",
-            lessonDescription: "$info_lesson.description",
-            lessonPhotoUrl: "$info_lesson.photo_url",
-            lessonPublicId: "$info_lesson.public_id",
-            lessonCategories: "$info_lesson.id_category",
-            lessonCreatedAt: "$info_lesson.createdAt",
-            lessonUpdatedAt: "$info_lesson.updatedAt",
+            id_lesson: "$info_lesson._id",
+            title: "$info_lesson.title",
+            description: "$info_lesson.description",
+            photo_url: "$info_lesson.photo_url",
+            public_id: "$info_lesson.public_id",
+            categories: "$info_lesson.id_category",
+            createdAt: "$info_lesson.createdAt",
+            updatedAt: "$info_lesson.updatedAt",
             // Add more fields as needed
           },
         },
       ]);
-
       return res.status(200).json({
         status: "Success",
         data: data,
