@@ -5,9 +5,16 @@ const {
   Quiz,
   Stage,
   Category,
+  StageDetail,
 } = require("../models/lessonModel");
 const { default: mongoose } = require("mongoose");
-
+const cloudinary = require("cloudinary").v2;
+require("dotenv").config();
+cloudinary.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.API_KEY_CLOUD,
+  api_secret: process.env.API_SECRET_CLOUD,
+});
 class LessonController {
   async getCategory(req, res) {
     try {
@@ -16,6 +23,82 @@ class LessonController {
         status: "Success",
         data: data,
       });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "Something's wrong",
+        error: error,
+      });
+    }
+  }
+
+  async addCategory(req, res) {
+    try {
+      const body = req.body;
+      let headers = req.headers;
+      const type = jwtDecode(headers.authorization).type;
+      if (type != "admin") {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Unauthorized",
+        });
+      }
+      const result = await Category.create(body);
+      return res.status(200).json({
+        status: "Success",
+        data: result,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "Something's wrong",
+        error: error,
+      });
+    }
+  }
+
+  async updateCategory(req, res) {
+    try {
+      const ObjectId = mongoose.Types.ObjectId;
+
+      let { id } = req.params;
+      const body = req.body;
+      const category = await Category.findOne({ _id: new ObjectId(id) });
+      if (!category) {
+        return res.status(404).json({
+          status: "Failed",
+          message: "Category's not found",
+        });
+      }
+      await Category.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            name: body.name,
+            description: body.description,
+          },
+        }
+      );
+      return res.status(200).json({
+        status: "Success",
+        message: "Data has been updated",
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "Something's wrong",
+        error: error,
+      });
+    }
+  }
+
+  async deleteCategory(req, res) {
+    try {
+      const headers = req.headers;
+      const ObjectId = mongoose.Types.ObjectId;
     } catch (error) {
       console.log(error);
       return res.status(500).json({
@@ -36,11 +119,26 @@ class LessonController {
           message: "Unauthorized",
         });
       }
+      if (req.file?.path != undefined) {
+        const { secure_url, public_id } = await cloudinary.uploader.upload(
+          req.file.path,
+          { folder: "/pulse/lessons" }
+        );
+        body.photo_url = secure_url;
+        body.public_id = public_id;
+      } else {
+        return res.status(400).json({
+          status: "Failed",
+          message: "Image is required.",
+        });
+      }
       const lesson = await Lesson.create({
         title: body.title,
         description: body.description,
         color_way: body.color_way,
         id_category: body.id_category,
+        photo_url: body.photo_url,
+        public_id: body.public_id,
       });
 
       console.log(body);
@@ -83,7 +181,7 @@ class LessonController {
             _id: "$_id",
             title: { $first: "$title" },
             description: { $first: "$description" },
-            color_way: { $first: "$color_way" },
+            photo_url: { $first: "$photo_url" },
             id_category: { $first: "$id_category" },
             createdAt: { $first: "$createdAt" },
             updatedAt: { $first: "$updatedAt" },
@@ -161,6 +259,49 @@ class LessonController {
     }
   }
 
+  async addDetailStage(req, res) {
+    try {
+      const { id } = req.params;
+      const detail = req.body;
+      const ObjectId = mongoose.Types.ObjectId;
+      let headers = req.headers;
+      const type = jwtDecode(headers.authorization).type;
+      if (type != "admin") {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Unauthorized",
+        });
+      }
+      const stage = await Stage.findOne({ _id: new ObjectId(id) });
+      if (!stage) {
+        return res.status(404).json({
+          status: "Failed",
+          message: "Stage's not found",
+        });
+      }
+      const check = await StageDetail.findOne({id_stages: new ObjectId(id)})
+      if (check) {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Content's already exist"
+        })
+      }
+      detail.id_stages = id
+      const data = await StageDetail.create(detail);
+      return res.status(200).json({
+        status: "Success",
+        data: data,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "Something's wrong",
+        error: error,
+      });
+    }
+  }
+
   async getStage(req, res) {
     try {
       const ObjectId = mongoose.Types.ObjectId;
@@ -186,6 +327,27 @@ class LessonController {
       return res.status(200).json({
         status: "Success",
         data: stage,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "Something's wrong",
+        error: error,
+      });
+    }
+  }
+
+  async getDetailStage(req, res) {
+    try {
+      const ObjectId = mongoose.Types.ObjectId;
+
+      const { id } = req.params;
+      console.log(id);
+      const detail = await StageDetail.findOne({ id_stages: new ObjectId(id) });
+      return res.status(200).json({
+        status: "Success",
+        data: detail,
       });
     } catch (error) {
       console.log(error);

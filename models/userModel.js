@@ -53,6 +53,20 @@ const userSchema = mongoose.Schema(
   }
 );
 
+const detailUserModel = mongoose.Schema({
+  id_user: {
+    type: mongoose.Types.ObjectId,
+    ref: "users",
+    required: true,
+  },
+  country: {
+    type: String,
+  },
+  address: {
+    type: String,
+  },
+});
+
 const verifyModel = mongoose.Schema({
   id_user: {
     type: ObjectId,
@@ -111,8 +125,63 @@ const adminModel = mongoose.Schema({
   },
 });
 
+const userAcademyModel = mongoose.Schema({
+  id_lesson: {
+    type: mongoose.Types.ObjectId,
+    ref: "lessons",
+    required: true,
+  },
+  id_user: {
+    type: mongoose.Types.ObjectId,
+    ref: "users",
+    required: true,
+  },
+  progress: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0,
+  },
+});
+
+const userQuizModel = mongoose.Schema({
+  id_quiz: {
+    type: mongoose.Types.ObjectId,
+    ref: "quizzes",
+    required: true,
+  },
+  id_user: {
+    type: mongoose.Types.ObjectId,
+    ref: "users",
+    required: true,
+  },
+  progress: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0,
+  },
+  score: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0,
+  },
+});
 const User = mongoose.model("users", userSchema);
+const UserDetail = mongoose.model("user-detail", detailUserModel);
+const UserAcademy = mongoose.model("user-academies", userAcademyModel);
 const Verify = mongoose.model("veryfies", verifyModel);
 const Forgot = mongoose.model("forgots", forgotModel);
 const Admin = mongoose.model("admins", adminModel);
-module.exports = { User, Verify, Forgot, Admin };
+const UserQuiz = mongoose.model("user-quizz", userQuizModel);
+
+module.exports = {
+  User,
+  UserDetail,
+  Verify,
+  Forgot,
+  Admin,
+  UserAcademy,
+  UserQuiz,
+};
