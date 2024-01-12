@@ -157,5 +157,113 @@ Headers
 | Authorization | Required | String |
 
 
+### category
+```
+/lesson/category
+```
 
+**Method: GET**
+
+Headers
+|     Name      |  Status  |        |
+| :-----------: | :------: | :----: |
+| Authorization | Required | String |
+
+
+### post category (Admin only)
+```
+/lesson/category/post
+```
+
+**Method: POST**
+
+Headers
+|     Name      |  Status  |        |
+| :-----------: | :------: | :----: |
+| Authorization | Required | String |
+
+Body
+|    Name     |  Status  |          |
+| :-------: | :------: | :------: |
+| name     | Required | String   |
+| description | Required | String   |
+
+### update category (Admin only)
+```
+/lesson/category/[id]
+```
+
+**Method: PUT**
+
+Headers
+|     Name      |  Status  |        |
+| :-----------: | :------: | :----: |
+| Authorization | Required | String |
+
+Body
+|    Name     |  Status  |          |
+| :-------: | :------: | :------: |
+| name     | Required | String   |
+| description | Required | String   |
+
+### stages
+```
+/lesson/stages/[id_lesson]
+```
+
+**Method: GET**
+
+Headers
+|     Name      |  Status  |        |
+| :-----------: | :------: | :----: |
+| Authorization | Required | String |
+
+### book content stage
+```
+/lesson/stages/content/[id]
+```
+
+**Methods: GET**
+
+Headers
+|     Name      |  Status  |        |
+| :-----------: | :------: | :----: |
+| Authorization | Required | String |
+
+### post stage (Admin only)
+```
+/lesson/stages/post
+```
+
+**Method: POST**
+
+Headers
+|     Name      |  Status  |        |
+| :-----------: | :------: | :----: |
+| Authorization | Required | String |
+
+Body
+|    Name    |  Status  |          |
+| :-------:  | :------: | :------: |
+| name       | Required | String   |
+| id_lesson  | Required | String   |
+| difficulty | Required | Integer  |
+
+
+### post book content stage (Admin only)
+```
+/lesson/stages/content/[id]
+```
+
+**Method: POST**
+
+Headers
+|     Name      |  Status  |        |
+| :-----------: | :------: | :----: |
+| Authorization | Required | String |
+
+Body
+|    Name    |  Status  |          |
+| :-------:  | :------: | :------: |
+| content    | Required | String   |
 
