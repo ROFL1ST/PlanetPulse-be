@@ -180,6 +180,26 @@ Headers
 | :-----------: | :------: | :----: |
 | Authorization | Required | String |
 
+### Lesson post (Admin only)
+```
+/lesson/post
+```
+
+**Method: POST**
+
+Headers
+|     Name      |  Status  |        |
+| :-----------: | :------: | :----: |
+| Authorization | Required | String |
+
+Body
+|    Name     |  Status  |               |
+| :-------:   | :------: | :------------:|
+| title       | Required | String        |
+| description | Required | String        |
+| photo_url   | Required | String        |
+| id_category | Required | [id_category] |
+
 
 ### category
 ```
