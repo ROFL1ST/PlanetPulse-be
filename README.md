@@ -140,3 +140,22 @@ Headers
 |     Name      |  Status  |        |
 | :-----------: | :------: | :----: |
 | Authorization | Required | String |
+
+
+## Lesson
+
+### Lesson
+```markdown
+/lesson
+```
+
+**Method: GET**
+
+Headers
+|     Name      |  Status  |        |
+| :-----------: | :------: | :----: |
+| Authorization | Required | String |
+
+
+
+
