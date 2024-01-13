@@ -258,11 +258,11 @@ class userControl {
           });
         }
       }
-      await Forgot.deleteOne({id_user: new ObjectId(data._id)})
+      await Forgot.deleteOne({ id_user: new ObjectId(data._id) });
       const code = Math.floor(1000 + Math.random() * 9000);
       const today = new Date();
       const expirationDate = new Date(today);
-      expirationDate.setMinutes(today.getMinutes() + 5); 
+      expirationDate.setMinutes(today.getMinutes() + 5);
       let expired = expirationDate.toISOString();
       const context = {
         code: code,
@@ -407,7 +407,7 @@ class userControl {
       if (!check) {
         return res.status(404).json({
           status: "Failed",
-          message: "Code's not found",
+          message: "Code's not valid",
         });
       }
       const data = await User.findOne({
@@ -419,10 +419,13 @@ class userControl {
           message: "User's not found",
         });
       }
-      if (check.code != code) {
+
+      // check expired
+      const currentTime = new Date().getTime();
+      if (currentTime > check.dateExpired) {
         return res.status(401).json({
           status: "Failed",
-          message: "Code's not valid",
+          message: "Code's expired. Please generate a new code",
         });
       }
       await Forgot.deleteOne({ id_user: new ObjectId(data._id) });
