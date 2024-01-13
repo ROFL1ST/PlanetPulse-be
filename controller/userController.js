@@ -248,15 +248,20 @@ class userControl {
       }
       const check = await Forgot.findOne({ id_user: new ObjectId(data._id) });
       if (check) {
-        return res.status(401).json({
-          status: "Failed",
-          message: "You have sent the code",
-        });
+        const currentDate = new Date();
+        const dateExpired = new Date(check.dateExpired);
+        if (currentDate < dateExpired) {
+          return res.status(401).json({
+            status: "Failed",
+            message:
+              "You have already sent the code. Please wait until the current code expires.",
+          });
+        }
       }
       const code = Math.floor(1000 + Math.random() * 9000);
       const today = new Date();
       const expirationDate = new Date(today);
-      expirationDate.setDate(today.getDate() + 7);
+      expirationDate.setHours(today.getHours() + 1); // Set expiration date to 1 hour from now
       let expired = expirationDate.toISOString();
       const context = {
         code: code,

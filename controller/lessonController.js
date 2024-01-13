@@ -221,6 +221,66 @@ class LessonController {
     }
   }
 
+  async updateLesson(req, res) {
+    try {
+      const ObjectId = mongoose.Types.ObjectId;
+      const body = req.body;
+      let headers = req.headers;
+      const type = jwtDecode(headers.authorization).type;
+      if (type != "admin") {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Unauthorized",
+        });
+      }
+      const { id } = req.params;
+      const check = await Lesson.findOne({ _id: new ObjectId(id) });
+      if (!check) {
+        return res.status(404).json({
+          status: "Failed",
+          message: "Lesson's not found",
+        });
+      }
+      if (req.file?.path != undefined) {
+        const { secure_url, public_id } = await cloudinary.uploader.upload(
+          req.file.path,
+          { folder: "/pulse/lessons" }
+        );
+        body.photo_url = secure_url;
+        body.public_id = public_id;
+        if (check.photo_url != null) {
+          await cloudinary.uploader.destroy(check.public_id);
+        }
+      } else {
+        body.photo_url = check.photo_url;
+        body.public_id = check.public_id;
+      }
+      await Lesson.updateOne(
+        {
+          _id: new ObjectId(id),
+        },
+        {
+          $set: {
+            name: body.name,
+            description: body.description,
+            photo_url: body.photo_url,
+            public_id: body.public_id,
+            id_category: body.id_category,
+          },
+        }
+      );
+      return res.status(200).json({
+        status: "Success",
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "Something's wrong",
+        error: error,
+      });
+    }
+  }
   async addStage(req, res) {
     try {
       const ObjectId = mongoose.Types.ObjectId;
