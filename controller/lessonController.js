@@ -279,14 +279,14 @@ class LessonController {
           message: "Stage's not found",
         });
       }
-      const check = await StageDetail.findOne({id_stages: new ObjectId(id)})
+      const check = await StageDetail.findOne({ id_stages: new ObjectId(id) });
       if (check) {
         return res.status(401).json({
           status: "Failed",
-          message: "Content's already exist"
-        })
+          message: "Content's already exist",
+        });
       }
-      detail.id_stages = id
+      detail.id_stages = id;
       const data = await StageDetail.create(detail);
       return res.status(200).json({
         status: "Success",
@@ -393,9 +393,39 @@ class LessonController {
     try {
       const ObjectId = mongoose.Types.ObjectId;
       let { id } = req.params;
-      const quiz = await Quiz.findOne({
-        id_stages: new ObjectId(id),
-      });
+      const quiz = await Quiz.aggregate([
+        { $match: { _id: new ObjectId(id) } },
+        {
+          $lookup: {
+            from: "questions", // Replace 'questions' with the actual name of your questions collection
+            localField: "questions",
+            foreignField: "_id",
+            as: "questions",
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            title: 1,
+            id_stages: 1,
+            createdAt: 1,
+            updatedAt: 1,
+            __v: 1,
+            questions: {
+              $map: {
+                input: "$questions",
+                as: "question",
+                in: {
+                  _id: "$$question._id",
+                  text: "$$question.text",
+                  options: "$$question.options",
+                  correctOptionIndex: "$$question.correctOptionIndex",
+                },
+              },
+            },
+          },
+        },
+      ]);
       if (!quiz) {
         return res.status(404).json({
           status: "Failed",
