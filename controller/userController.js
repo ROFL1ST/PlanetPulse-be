@@ -261,7 +261,7 @@ class userControl {
       const code = Math.floor(1000 + Math.random() * 9000);
       const today = new Date();
       const expirationDate = new Date(today);
-      expirationDate.setHours(today.getHours() + 1); // Set expiration date to 1 hour from now
+      expirationDate.setMinutes(today.getMinutes() + 5); 
       let expired = expirationDate.toISOString();
       const context = {
         code: code,
