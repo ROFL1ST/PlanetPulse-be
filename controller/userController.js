@@ -258,6 +258,7 @@ class userControl {
           });
         }
       }
+      await Forgot.deleteOne({id_user: new ObjectId(data._id)})
       const code = Math.floor(1000 + Math.random() * 9000);
       const today = new Date();
       const expirationDate = new Date(today);
