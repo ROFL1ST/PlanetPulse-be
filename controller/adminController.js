@@ -68,7 +68,7 @@ class adminController {
       const ObjectId = mongoose.Types.ObjectId;
       let body = req.body;
       let isUserExist = await Admin.findOne({
-        username: body.username,
+        email: body.email,
       });
       if (!isUserExist) {
         return res.status(404).json({
@@ -88,7 +88,7 @@ class adminController {
         {
           email: isUserExist.email,
           id: isUserExist._id,
-          name: isUserExist.name,
+          username: isUserExist.username,
           type: "admin",
         },
         process.env.JWT_ACCESS_TOKEN
