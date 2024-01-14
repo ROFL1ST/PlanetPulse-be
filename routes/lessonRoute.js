@@ -14,11 +14,14 @@ router.put(
   uploader.single("photo_url"),
   LessonController.updateLesson
 );
+router.delete("/delete/:id", LessonController.deleteLesson)
 // stages
 router.post("/stages/post", LessonController.addStage);
 router.get("/stages/:id", LessonController.getStage);
+router.put("/stages/update/:id", LessonController.updateStage);
 router.post("/stages/content/:id", LessonController.addDetailStage);
 router.get("/stages/content/:id", LessonController.getDetailStage);
+router.delete("/stages/delete/:id", LessonController.deleteStage);
 // quizz
 router.get("/quiz/:id", LessonController.getQuiz);
 router.post("/quiz/post", LessonController.addQuiz);

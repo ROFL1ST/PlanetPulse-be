@@ -6,7 +6,7 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { default: jwtDecode } = require("jwt-decode");
-const { Quiz } = require("../models/lessonModel");
+const { Quiz, Stage } = require("../models/lessonModel");
 
 class adminController {
   async registerAdmin(req, res) {
@@ -286,11 +286,45 @@ class adminController {
             },
           },
         },
-      ])
+      ]);
       return res.status(200).json({
         status: "Success",
-        data: data
-      })
+        data: data,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: error.message,
+      });
+    }
+  }
+
+  async getAllStagges(req, res) {
+    try {
+      let headers = req.headers;
+      const type = jwtDecode(headers.authorization).type;
+      console.log(type);
+      if (type != "admin") {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Unauthorized",
+        });
+      }
+      const data = await Stage.aggregate([
+        {
+          $lookup: {
+            from: "quizzes",
+            localField: "_id",
+            foreignField: "id_stages",
+            as: "quizzes",
+          },
+        },
+      ]);
+      return res.status(200).json({
+        status: "Success",
+        data: data,
+      });
     } catch (error) {
       console.log(error);
       return res.status(500).json({

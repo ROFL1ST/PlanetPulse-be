@@ -119,6 +119,7 @@ class LessonController {
     try {
       let body = req.body;
       let headers = req.headers;
+      console.log(body);
       const type = jwtDecode(headers.authorization).type;
       if (type != "admin") {
         return res.status(401).json({
@@ -152,6 +153,32 @@ class LessonController {
       res.status(200).json({
         status: "Success",
         data: lesson,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "Something's wrong",
+        error: error,
+      });
+    }
+  }
+
+  async deleteLesson(req, res) {
+    try {
+      const { id } = req.params;
+      const ObjectId = mongoose.Types.ObjectId;
+      let headers = req.headers;
+      const type = jwtDecode(headers.authorization).type;
+      if (type != "admin") {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Unauthorized",
+        });
+      }
+      await Lesson.deleteOne({ _id: new ObjectId(id) });
+      return res.status(200).json({
+        status: "Success",
       });
     } catch (error) {
       console.log(error);
@@ -410,7 +437,6 @@ class LessonController {
       const ObjectId = mongoose.Types.ObjectId;
 
       const { id } = req.params;
-      console.log(id);
       const detail = await StageDetail.findOne({ id_stages: new ObjectId(id) });
       return res.status(200).json({
         status: "Success",
@@ -445,6 +471,85 @@ class LessonController {
       return res.status(200).json({
         status: "Success",
         data: quiz,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "Something's wrong",
+        error: error,
+      });
+    }
+  }
+
+  async updateStage(req, res) {
+    try {
+      const { id } = req.params;
+      const body = req.body;
+      const ObjectId = mongoose.Types.ObjectId;
+      let headers = req.headers;
+      const type = jwtDecode(headers.authorization).type;
+      if (type != "admin") {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Unauthorized",
+        });
+      }
+      const check = await Stage.findOne({ _id: new ObjectId(id) });
+      if (!check) {
+        return res.status(404).json({
+          status: "Failed",
+          message: "Stage's not found",
+        });
+      }
+      const data = await Stage.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            name: body.name,
+            difficulty: body.difficulty,
+            id_lesson: body.id_lesson,
+          },
+        }
+      );
+      return res.status(200).json({
+        status: "Success",
+        data: data,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "Something's wrong",
+        error: error,
+      });
+    }
+  }
+
+  async deleteStage(req, res) {
+    try {
+      const { id } = req.params;
+      const ObjectId = mongoose.Types.ObjectId;
+      let headers = req.headers;
+      const type = jwtDecode(headers.authorization).type;
+      if (type != "admin") {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Unauthorized",
+        });
+      }
+      const check = await Stage.findOne({ _id: new ObjectId(id) });
+      if (!check) {
+        return res.status(404).json({
+          status: "Failed",
+          message: "Stage's not found",
+        });
+      }
+      await StageDetail.deleteOne({ id_stages: new ObjectId(id) });
+      await Stage.deleteOne({ _id: new ObjectId(id) });
+      return res.status(200).json({
+        status: "Success",
+        message: "Delete Successfully",
       });
     } catch (error) {
       console.log(error);
