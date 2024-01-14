@@ -5,6 +5,7 @@ const { uploader } = require("../middleware/file_upload");
 router.get("/category", LessonController.getCategory);
 router.post("/category/post", LessonController.addCategory);
 router.put("/category/:id", LessonController.updateCategory);
+router.delete("/category/:id", LessonController.deleteCategory);
 
 router.get("/", LessonController.getLesson);
 router.post("/post", uploader.single("photo_url"), LessonController.addLesson);

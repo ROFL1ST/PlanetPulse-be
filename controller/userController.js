@@ -711,6 +711,37 @@ class userControl {
       });
     }
   }
+
+  async deleteAcademy(req, res) {
+    try {
+      const ObjectId = mongoose.Types.ObjectId;
+      const headers = req.headers;
+      const { id } = req.params;
+      const id_user = jwtDecode(headers.authorization).id;
+      const academy = await UserAcademy.findOne({
+        $and: [
+          { _id: new ObjectId(id) },
+          { id_user: new ObjectId(id_user) },
+        ],
+      });
+      if (!academy) {
+        return res.status(404).json({
+          status: "Failed",
+          message: "Academy's not found",
+        });
+      }
+      await UserAcademy.deleteOne({ _id: new ObjectId(id) });
+      return res.status(200).json({
+        status: "Success",
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: error,
+      });
+    }
+  }
   // async initiateGoogle(req, res) {
   //   try {
   //     const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.CLIENT_ID}&redirect_uri=${process.env.REDIRECT_URI_LOCAL}&response_type=code&scope=profile email`;
