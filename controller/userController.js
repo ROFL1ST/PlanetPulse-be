@@ -213,7 +213,7 @@ class userControl {
             message: "Token is not valid",
           });
         }
-        const { id, email, name } = jwt.decode(token);
+        const { id, email, name } = decode(token);
         const newToken = jwt.sign(
           { email, id, name },
           process.env.JWT_ACCESS_TOKEN,
