@@ -18,3 +18,4 @@ router.use(jwtMiddleWare);
 router.use("/lesson", lessonRoute);
 
 module.exports = router;
+

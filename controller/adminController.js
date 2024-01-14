@@ -6,6 +6,7 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { default: jwtDecode } = require("jwt-decode");
+const { Quiz } = require("../models/lessonModel");
 
 class adminController {
   async registerAdmin(req, res) {
@@ -86,7 +87,8 @@ class adminController {
           username: isUserExist.username,
           type: "admin",
         },
-        process.env.JWT_ACCESS_TOKEN
+        process.env.JWT_ACCESS_TOKEN,
+        { expiresIn: "30d" }
       );
       await Admin.updateOne(
         {
@@ -103,6 +105,53 @@ class adminController {
       return res.status(500).json({
         status: "Failed",
         message: error.message,
+      });
+    }
+  }
+
+  async auth(req, res) {
+    try {
+      const ObjectId = mongoose.Types.ObjectId;
+
+      const { authorization } = req.headers;
+      if (authorization === undefined)
+        return res
+          .status(401)
+          .json({ status: "Failed", message: "Token is required" });
+      const token = authorization.split(" ")[1];
+      jwt.verify(token, process.env.JWT_ACCESS_TOKEN, async (err, decode) => {
+        if (err) {
+          return res.status(401).json({
+            status: "Failed",
+            message: "Token is not valid",
+          });
+        }
+        const { id, email, username } = jwt.decode(token);
+        const newToken = jwt.sign(
+          {
+            email: email,
+            id: id,
+            username: username,
+            type: "admin",
+          },
+          process.env.JWT_ACCESS_TOKEN,
+          { expiresIn: "30d" }
+        );
+        await Admin.updateOne(
+          {
+            _id: new ObjectId(jwtDecode(token).id),
+          },
+          { $set: { token: newToken } }
+        );
+        return res.status(200).json({
+          status: "Success",
+          token: newToken,
+        });
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
       });
     }
   }
@@ -148,6 +197,100 @@ class adminController {
         status: "Success",
         data: data,
       });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: error.message,
+      });
+    }
+  }
+
+  async totalUser(req, res) {
+    try {
+      let headers = req.headers;
+      const type = jwtDecode(headers.authorization).type;
+      console.log(type);
+      if (type != "admin") {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Unauthorized",
+        });
+      }
+      const data = await User.aggregate([
+        {
+          $project: {
+            _id: 1,
+            username: 1,
+            email: 1,
+            photo_profile: 1,
+            status: 1,
+            isVerified: 1,
+          },
+        },
+      ]);
+      const count = data.length;
+      return res.status(200).json({
+        status: "Success",
+        count: count,
+        data: data,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: error.message,
+      });
+    }
+  }
+
+  async getAllQuiz(req, res) {
+    try {
+      let headers = req.headers;
+      const type = jwtDecode(headers.authorization).type;
+      console.log(type);
+      if (type != "admin") {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Unauthorized",
+        });
+      }
+      const data = await Quiz.aggregate([
+        {
+          $lookup: {
+            from: "questions", // Replace 'questions' with the actual name of your questions collection
+            localField: "questions",
+            foreignField: "_id",
+            as: "questions",
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            title: 1,
+            id_stages: 1,
+            createdAt: 1,
+            updatedAt: 1,
+            __v: 1,
+            questions: {
+              $map: {
+                input: "$questions",
+                as: "question",
+                in: {
+                  _id: "$$question._id",
+                  text: "$$question.text",
+                  options: "$$question.options",
+                  correctOptionIndex: "$$question.correctOptionIndex",
+                },
+              },
+            },
+          },
+        },
+      ])
+      return res.status(200).json({
+        status: "Success",
+        data: data
+      })
     } catch (error) {
       console.log(error);
       return res.status(500).json({
