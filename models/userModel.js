@@ -168,6 +168,24 @@ const userQuizModel = mongoose.Schema({
     default: 0,
   },
 });
+
+const log_userModel = mongoose.Schema({
+  dateLog: {
+    type: Date,
+    default: new Date(),
+    required: true,
+  },
+  action: {
+    type: String,
+    enum: ["login", "logout"],
+    required: true,
+  },
+  id_user: {
+    type: mongoose.Types.ObjectId,
+    ref: "users",
+    required: true,
+  },
+});
 const User = mongoose.model("users", userSchema);
 const UserDetail = mongoose.model("user-detail", detailUserModel);
 const UserAcademy = mongoose.model("user-academies", userAcademyModel);
@@ -175,6 +193,7 @@ const Verify = mongoose.model("veryfies", verifyModel);
 const Forgot = mongoose.model("forgots", forgotModel);
 const Admin = mongoose.model("admins", adminModel);
 const UserQuiz = mongoose.model("user-quizz", userQuizModel);
+const UserLog = mongoose.model("user-logs", log_userModel);
 
 module.exports = {
   User,
@@ -184,4 +203,5 @@ module.exports = {
   Admin,
   UserAcademy,
   UserQuiz,
+  UserLog,
 };

@@ -5,6 +5,7 @@ const {
   Forgot,
   Admin,
   UserAcademy,
+  UserLog,
 } = require("../models/userModel");
 const { sendEmail } = require("../mail");
 const bcrypt = require("bcrypt");
@@ -178,6 +179,11 @@ class userControl {
         { $set: { token: token } }
       );
 
+      await UserLog.create({
+        id_user: jwtDecode(token).id,
+        action: "login",
+        date: Date.now(),
+      });
       return res.status(200).json({
         status: "Success",
         token: token,
@@ -221,6 +227,11 @@ class userControl {
           },
           { $set: { token: newToken } }
         );
+        await UserLog.create({
+          id_user: jwtDecode(token).id,
+          action: "login",
+          date: Date.now(),
+        });
         return res.status(200).json({
           status: "Success",
           token: newToken,
@@ -719,10 +730,7 @@ class userControl {
       const { id } = req.params;
       const id_user = jwtDecode(headers.authorization).id;
       const academy = await UserAcademy.findOne({
-        $and: [
-          { _id: new ObjectId(id) },
-          { id_user: new ObjectId(id_user) },
-        ],
+        $and: [{ _id: new ObjectId(id) }, { id_user: new ObjectId(id_user) }],
       });
       if (!academy) {
         return res.status(404).json({
