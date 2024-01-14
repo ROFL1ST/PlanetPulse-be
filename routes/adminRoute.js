@@ -17,5 +17,6 @@ router.get("/user", adminController.totalUser)
 
 // lesson
 router.get("/quizzes", adminController.getAllQuiz)
+router.get("/stagges", adminController.getAllStagges)
 
 module.exports = { adminRoute: router };
