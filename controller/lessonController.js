@@ -62,7 +62,14 @@ class LessonController {
   async updateCategory(req, res) {
     try {
       const ObjectId = mongoose.Types.ObjectId;
-
+      let headers = req.headers;
+      const type = jwtDecode(headers.authorization).type;
+      if (type != "admin") {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Unauthorized",
+        });
+      }
       let { id } = req.params;
       const body = req.body;
       const category = await Category.findOne({ _id: new ObjectId(id) });

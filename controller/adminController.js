@@ -1,5 +1,5 @@
 const { default: mongoose } = require("mongoose");
-const { User, Verify, Forgot, Admin } = require("../models/userModel");
+const { User, Verify, Forgot, Admin, UserLog } = require("../models/userModel");
 const { sendEmail } = require("../mail");
 const bcrypt = require("bcrypt");
 require("dotenv").config();
@@ -20,12 +20,7 @@ class adminController {
           message: "Invalid Key!",
         });
       }
-      if (
-        !body ||
-        !body.email ||
-        !body.username ||
-        !body.password
-      )
+      if (!body || !body.email || !body.username || !body.password)
         return res.status(400).json({
           status: "Failed",
           message: "Please enter your username, password and email correctly",
@@ -111,6 +106,56 @@ class adminController {
       });
     }
   }
+
+  async getLog(req, res) {
+    try {
+      const ObjectId = mongoose.Types.ObjectId;
+      let headers = req.headers;
+      const type = jwtDecode(headers.authorization).type;
+      if (type != "admin") {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Unauthorized",
+        });
+      }
+      const data = await UserLog.aggregate([
+        {
+          $lookup: {
+            from: "users",
+            localField: "id_user",
+            foreignField: "_id",
+            as: "user",
+          },
+        },
+        {
+          $unwind: "$user",
+        },
+        {
+          $project: {
+            username: "$user.username",
+            name: "$user.name",
+            email: "$user.email",
+            dateLog: 1,
+            action: 1,
+            id_user: 1,
+            _id: 1,
+            photo_profile: "$user.photo_profile",
+            isVerified: "$user.isVerified",
+          },
+        },
+      ]);
+      return res.status(200).json({
+        status: "Success",
+        data: data,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: error.message,
+      });
+    }
+  }
 }
 
-module.exports = new adminController()
+module.exports = new adminController();
