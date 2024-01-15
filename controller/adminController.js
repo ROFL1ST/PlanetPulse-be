@@ -6,7 +6,7 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { default: jwtDecode } = require("jwt-decode");
-const { Quiz, Stage } = require("../models/lessonModel");
+const { Quiz, Stage, Question } = require("../models/lessonModel");
 
 class adminController {
   async registerAdmin(req, res) {
@@ -356,6 +356,83 @@ class adminController {
       return res.status(500).json({
         status: "Failed",
         message: error.message,
+      });
+    }
+  }
+
+
+   // question
+   async addQuestion(req, res) {
+    try {
+      let headers = req.headers;
+      let body = req.body;
+      const type = jwtDecode(headers.authorization).type;
+      if (type != "admin") {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Unauthorized",
+        });
+      }
+      const question = await Question.create({
+        text: body.text,
+        options: body.options,
+        correctOptionIndex: body.correctOptionIndex,
+      });
+      return res.status(200).json({
+        status: "Success",
+        data: question,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "Something's wrong",
+        error: error,
+      });
+    }
+  }
+
+  async getQuestion(req, res) {
+    try {
+      let question = await Question.find();
+      return res.status(200).json({
+        status: "Success",
+        data: question,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "Something's wrong",
+        error: error,
+      });
+    }
+  }
+
+  async getDetailQuestion(req, res) {
+    try {
+      const id = req.params.id;
+      const ObjectId = mongoose.Types.ObjectId;
+
+      let question = await Question.findOne({
+        _id: new ObjectId(id),
+      });
+      if (!question) {
+        return res.status(404).json({
+          status: "Failed",
+          message: "No such question",
+        });
+      }
+      res.status(200).json({
+        status: "Success",
+        data: question,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "Something's wrong",
+        error: error,
       });
     }
   }
