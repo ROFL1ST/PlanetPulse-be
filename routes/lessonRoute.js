@@ -28,8 +28,5 @@ router.delete("/stages/delete/:id", LessonController.deleteStage);
 router.get("/quiz/:id", LessonController.getQuiz);
 router.post("/quiz/post", LessonController.addQuiz);
 
-// question
-router.get("/question", LessonController.getQuestion);
-router.get("/question/:id", LessonController.getDetailQuestion);
-router.post("/question/post", LessonController.addQuestion);
+
 module.exports = { lessonRoute: router };

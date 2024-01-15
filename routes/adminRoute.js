@@ -19,4 +19,9 @@ router.get("/user", adminController.totalUser)
 router.get("/quizzes", adminController.getAllQuiz)
 router.get("/stagges", adminController.getAllStagges)
 
+
+// question
+router.get("/question", adminController.getQuestion);
+router.get("/question/:id", adminController.getDetailQuestion);
+router.post("/question/post", adminController.addQuestion);
 module.exports = { adminRoute: router };
