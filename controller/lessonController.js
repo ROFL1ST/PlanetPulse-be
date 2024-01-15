@@ -119,7 +119,6 @@ class LessonController {
     try {
       let body = req.body;
       let headers = req.headers;
-      console.log(body);
       const type = jwtDecode(headers.authorization).type;
       if (type != "admin") {
         return res.status(401).json({
@@ -149,7 +148,6 @@ class LessonController {
         public_id: body.public_id,
       });
 
-      console.log(body);
       res.status(200).json({
         status: "Success",
         data: lesson,
@@ -255,6 +253,69 @@ class LessonController {
     }
   }
 
+  async detailLesson(req, res) {
+    try {
+      const ObjectId = mongoose.Types.ObjectId;
+      const { id } = req.params;
+      const data = await Lesson.aggregate([
+        {
+          $match: {
+            _id: new ObjectId(id),
+          },
+        },
+        {
+          $lookup: {
+            from: "categories", // Assuming the name of the collection is "categories"
+            localField: "id_category",
+            foreignField: "_id",
+            as: "categories",
+          },
+        },
+        {
+          $group: {
+            _id: "$_id",
+            title: { $first: "$title" },
+            description: { $first: "$description" },
+            photo_url: { $first: "$photo_url" },
+            id_category: { $first: "$id_category" },
+            createdAt: { $first: "$createdAt" },
+            updatedAt: { $first: "$updatedAt" },
+            __v: { $first: "$__v" },
+            categories: { $push: "$categories" },
+          },
+        },
+        {
+          $unwind: "$categories",
+        },
+        {
+          $project: {
+            id_category: 0,
+          },
+        },
+        {
+          $lookup: {
+            from: "stages",
+            localField: "_id",
+            foreignField: "id_lesson",
+            as: "stages",
+          },
+        },
+      ]);
+      if (data.length == 0) {
+        return res
+          .status(404)
+          .json({ status: "Failed", message: "Lesson's not found" });
+      }
+      return res.status(200).json({ status: "Success", data: data });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "Something's wrong",
+        error: error,
+      });
+    }
+  }
   async updateLesson(req, res) {
     try {
       const ObjectId = mongoose.Types.ObjectId;
@@ -339,6 +400,10 @@ class LessonController {
         });
       }
       const stages = await Stage.create(body);
+      await StageDetail.create({
+        id_stages: stages._id,
+        title: "Your Content",
+      });
       return res.status(200).json({
         status: "Success",
         data: stages,
@@ -395,11 +460,51 @@ class LessonController {
       });
     }
   }
+  async updateDetailStage(req, res) {
+    try {
+      const { id } = req.params;
+      const detail = req.body;
+      const ObjectId = mongoose.Types.ObjectId;
+      let headers = req.headers;
+      const type = jwtDecode(headers.authorization).type;
+      if (type != "admin") {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Unauthorized",
+        });
+      }
+      const stage = await StageDetail.findOne({ id_stages: new ObjectId(id) });
+      if (!stage) {
+        return res.status(404).json({
+          status: "Failed",
+          message: "Stage's not found",
+        });
+      }
+      await StageDetail.updateOne(
+        { id_stages: new ObjectId(id) },
+        {
+          $set: {
+            title: detail.title,
+            content: detail.content,
+          },
+        }
+      );
 
+      return res.status(200).json({
+        status: "Success",
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "Something's wrong",
+        error: error,
+      });
+    }
+  }
   async getStage(req, res) {
     try {
       const ObjectId = mongoose.Types.ObjectId;
-
       const { id } = req.params;
       const stage = await Stage.aggregate([
         { $match: { id_lesson: new ObjectId(id) } },
