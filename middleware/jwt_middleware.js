@@ -20,7 +20,7 @@ async function jwtMiddleWare(req, res, next) {
       if (!user) {
         const admin = await Admin.findOne({ email: decode.email });
         if (!admin) {
-          return res.json({
+          return res.status(404).json({
             status: "Failed",
             message: "User's not found",
           });
