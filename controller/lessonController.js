@@ -119,7 +119,6 @@ class LessonController {
     try {
       let body = req.body;
       let headers = req.headers;
-      console.log(body);
       const type = jwtDecode(headers.authorization).type;
       if (type != "admin") {
         return res.status(401).json({
@@ -255,6 +254,69 @@ class LessonController {
     }
   }
 
+  async detailLesson(req, res) {
+    try {
+      const ObjectId = mongoose.Types.ObjectId;
+      const { id } = req.params;
+      const data = await Lesson.aggregate([
+        {
+          $match: {
+            _id: new ObjectId(id),
+          },
+        },
+        {
+          $lookup: {
+            from: "categories", // Assuming the name of the collection is "categories"
+            localField: "id_category",
+            foreignField: "_id",
+            as: "categories",
+          },
+        },
+        {
+          $group: {
+            _id: "$_id",
+            title: { $first: "$title" },
+            description: { $first: "$description" },
+            photo_url: { $first: "$photo_url" },
+            id_category: { $first: "$id_category" },
+            createdAt: { $first: "$createdAt" },
+            updatedAt: { $first: "$updatedAt" },
+            __v: { $first: "$__v" },
+            categories: { $push: "$categories" },
+          },
+        },
+        {
+          $unwind: "$categories",
+        },
+        {
+          $project: {
+            id_category: 0,
+          },
+        },
+        {
+          $lookup: {
+            from: "stages",
+            localField: "_id",
+            foreignField: "id_lesson",
+            as: "stages",
+          },
+        },
+      ]);
+      if (data.length == 0) {
+        return res
+          .status(404)
+          .json({ status: "Failed", message: "Lesson's not found" });
+      }
+      return res.status(200).json({ status: "Success", data: data });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "Something's wrong",
+        error: error,
+      });
+    }
+  }
   async updateLesson(req, res) {
     try {
       const ObjectId = mongoose.Types.ObjectId;

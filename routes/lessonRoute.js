@@ -8,6 +8,7 @@ router.put("/category/:id", LessonController.updateCategory);
 router.delete("/category/:id", LessonController.deleteCategory);
 
 router.get("/", LessonController.getLesson);
+router.get("/:id", LessonController.detailLesson);
 router.post("/post", uploader.single("photo_url"), LessonController.addLesson);
 router.put(
   "/update/:id",
