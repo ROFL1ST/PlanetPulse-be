@@ -60,7 +60,7 @@ EMAIL_PASSWORD = [your_password]
 
 **LOCAL URL** = http://localhost:9000/api/
 
-**ONLINE URL** = https://us-central1-planetpulse-b2400.cloudfunctions.net/api
+**ONLINE URL** = https://planet-pulse-be.vercel.app/api
 
 
 ## User
