@@ -66,7 +66,7 @@ const stages_detailSchema = mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "stages",
     required: true,
-    unique: true,
+  
   },
   title: {
     type: String,
@@ -124,7 +124,7 @@ const Category = mongoose.model("categories", categorySchema);
 const Lesson = mongoose.model("lessons", lessonSchema);
 const Quiz = mongoose.model("quizzes", quizSchema);
 const Stage = mongoose.model("stages", stagesSchema);
-const StageDetail = mongoose.model("stages-detail", stages_detailSchema);
+const StageDetail = mongoose.model("stages-details", stages_detailSchema);
 const Question = mongoose.model("questions", questionSchema);
 
 module.exports = { Category, Lesson, Quiz, Stage, StageDetail, Question };
