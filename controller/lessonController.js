@@ -721,7 +721,81 @@ class LessonController {
       });
     }
   }
- 
+
+  async updateQuizz(req, res) {
+    try {
+      const { id } = req.params;
+      const body = req.body;
+      const ObjectId = mongoose.Types.ObjectId;
+      let headers = req.headers;
+      const type = jwtDecode(headers.authorization).type;
+      if (type != "admin") {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Unauthorized",
+        });
+      }
+      const check = await Quiz.findOne({ _id: new ObjectId(id) });
+      if (!check) {
+        return res.status(404).json({
+          status: "Failed",
+          message: "Quiz's not found",
+        });
+      }
+      const updatedQuiz = await Quiz.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            title: body.title,
+            questions: body.questions,
+            id_stages: body.id_stages,
+          },
+        }
+      );
+      return res.status(200).json({
+        status: "Success",
+        data: updatedQuiz,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "Something's wrong",
+        error: error,
+      });
+    }
+  }
+
+  async deleteQuizz(req, res) {
+    try {
+      const { id } = req.params;
+      const ObjectId = mongoose.Types.ObjectId;
+      let headers = req.headers;
+      const type = jwtDecode(headers.authorization).type;
+      if (type != "admin") {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Unauthorized",
+        });
+      }
+      const check = await Quiz.findOne({ _id: new ObjectId(id) });
+      if (!check) {
+        return res.status(404).json({
+          status: "Failed",
+          message: "Quiz's not found",
+        });
+      }
+      await Quiz.deleteOne({ _id: new ObjectId(id) });
+      return res.status(200).json({ status: "Success" });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "Something's wrong",
+        error: error,
+      });
+    }
+  }
 }
 
 module.exports = new LessonController();

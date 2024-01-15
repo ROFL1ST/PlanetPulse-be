@@ -26,7 +26,9 @@ router.get("/stages/content/:id", LessonController.getDetailStage);
 router.delete("/stages/delete/:id", LessonController.deleteStage);
 // quizz
 router.get("/quiz/:id", LessonController.getQuiz);
+router.put("/quiz/:id", LessonController.updateQuizz);
 router.post("/quiz/post", LessonController.addQuiz);
+router.delete("/quiz/:id", LessonController.deleteQuizz);
 
 
 module.exports = { lessonRoute: router };
