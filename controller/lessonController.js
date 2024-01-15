@@ -148,7 +148,6 @@ class LessonController {
         public_id: body.public_id,
       });
 
-      console.log(body);
       res.status(200).json({
         status: "Success",
         data: lesson,
@@ -401,6 +400,10 @@ class LessonController {
         });
       }
       const stages = await Stage.create(body);
+      await StageDetail.create({
+        id_stages: stages._id,
+        title: "Your Content",
+      });
       return res.status(200).json({
         status: "Success",
         data: stages,
@@ -457,11 +460,51 @@ class LessonController {
       });
     }
   }
+  async updateDetailStage(req, res) {
+    try {
+      const { id } = req.params;
+      const detail = req.body;
+      const ObjectId = mongoose.Types.ObjectId;
+      let headers = req.headers;
+      const type = jwtDecode(headers.authorization).type;
+      if (type != "admin") {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Unauthorized",
+        });
+      }
+      const stage = await StageDetail.findOne({ id_stages: new ObjectId(id) });
+      if (!stage) {
+        return res.status(404).json({
+          status: "Failed",
+          message: "Stage's not found",
+        });
+      }
+      await StageDetail.updateOne(
+        { id_stages: new ObjectId(id) },
+        {
+          $set: {
+            title: detail.title,
+            content: detail.content,
+          },
+        }
+      );
 
+      return res.status(200).json({
+        status: "Success",
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "Something's wrong",
+        error: error,
+      });
+    }
+  }
   async getStage(req, res) {
     try {
       const ObjectId = mongoose.Types.ObjectId;
-
       const { id } = req.params;
       const stage = await Stage.aggregate([
         { $match: { id_lesson: new ObjectId(id) } },

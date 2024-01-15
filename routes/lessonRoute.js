@@ -21,6 +21,7 @@ router.post("/stages/post", LessonController.addStage);
 router.get("/stages/:id", LessonController.getStage);
 router.put("/stages/update/:id", LessonController.updateStage);
 router.post("/stages/content/:id", LessonController.addDetailStage);
+router.put("/stages/content/:id", LessonController.updateDetailStage);
 router.get("/stages/content/:id", LessonController.getDetailStage);
 router.delete("/stages/delete/:id", LessonController.deleteStage);
 // quizz

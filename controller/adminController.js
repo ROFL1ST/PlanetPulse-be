@@ -304,7 +304,7 @@ class adminController {
     try {
       let headers = req.headers;
       const type = jwtDecode(headers.authorization).type;
-      console.log(type);
+      const { key } = req.query;
       if (type != "admin") {
         return res.status(401).json({
           status: "Failed",
@@ -318,6 +318,32 @@ class adminController {
             localField: "_id",
             foreignField: "id_stages",
             as: "quizzes",
+          },
+        },
+        {
+          $lookup: {
+            from: "lessons",
+            localField: "id_lesson",
+            foreignField: "_id",
+            as: "lessons",
+          },
+        },
+        { $unwind: "$lessons" },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            id_lesson: 1,
+            difficulty: 1,
+            quizzes: "$quizzes",
+            lesson_name: "$lessons.title",
+            createdAt: 1,
+            updatedAt: 1,
+          },
+        },
+        {
+          $match: {
+            name: key ? { $regex: key, $options: "i" } : { $exists: true },
           },
         },
       ]);

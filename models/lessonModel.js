@@ -51,7 +51,7 @@ const stagesSchema = mongoose.Schema(
     difficulty: {
       type: Number,
       min: 1,
-      max: 5,
+      max: 3,
       required: true,
     },
   },
@@ -66,17 +66,16 @@ const stages_detailSchema = mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "stages",
     required: true,
-    unique: true
+    unique: true,
   },
   title: {
     type: String,
-    required: true
+    required: true,
   },
   content: {
     type: String,
-    required: true,
+    default: "",
   },
-
 });
 
 const quizSchema = mongoose.Schema(
