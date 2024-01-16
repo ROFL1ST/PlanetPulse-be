@@ -409,6 +409,111 @@ class adminController {
     }
   }
 
+  async addBulkQuestion(req, res) {
+    try {
+      let headers = req.headers;
+      let body = req.body;
+      const type = jwtDecode(headers.authorization).type;
+      if (type != "admin") {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Unauthorized",
+        });
+      }
+      const questionsData = body;
+
+      if (!Array.isArray(questionsData) || questionsData.length === 0) {
+        return res.status(400).json({
+          status: "Failed",
+          message: "Invalid data format",
+        });
+      }
+
+      const questions = await Question.insertMany(questionsData);
+      return res.status(200).json({
+        status: "Success",
+        data: questions,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "Something's wrong",
+        error: error,
+      });
+    }
+  }
+  async updateQuestion(req, res) {
+    try {
+      const { id } = req.params;
+      const body = req.body;
+      const ObjectId = mongoose.Types.ObjectId;
+      let headers = req.headers;
+      const type = jwtDecode(headers.authorization).type;
+      if (type != "admin") {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Unauthorized",
+        });
+      }
+      const check = await Question.findOne({ _id: new ObjectId(id) });
+      if (!check) {
+        return res
+          .status(404)
+          .json({ status: "Failed", message: "Question's not found" });
+      }
+      console.log(body);
+      await Question.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            text: body.text,
+            options: body.options,
+            correctOptionIndex: body.correctOptionIndex,
+          },
+        }
+      );
+      return res.status(200).json({ status: "Success" });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "Something's wrong",
+        error: error,
+      });
+    }
+  }
+
+  async deleteQuestion(req, res) {
+    try {
+      const { id } = req.params;
+      const ObjectId = mongoose.Types.ObjectId;
+      let headers = req.headers;
+      const type = jwtDecode(headers.authorization).type;
+      if (type != "admin") {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Unauthorized",
+        });
+      }
+      const check = await Question.findOne({ _id: new ObjectId(id) });
+      if (!check) {
+        return res
+          .status(404)
+          .json({ status: "Failed", message: "Question's not found" });
+      }
+      await Question.deleteOne({ _id: new ObjectId(id) });
+      return res.status(200).json({ status: "Success" });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "Something's wrong",
+        error: error,
+      });
+    }
+  }
+
   async getQuestion(req, res) {
     try {
       let question = await Question.find();
