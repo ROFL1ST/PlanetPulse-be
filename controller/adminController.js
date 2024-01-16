@@ -516,9 +516,29 @@ class adminController {
 
   async getQuestion(req, res) {
     try {
-      let question = await Question.find();
+      const { page = 1, limit = 30, key } = req.query;
+      const totalQuestions = await Question.countDocuments({});
+      const maxPage = Math.ceil(totalQuestions / parseInt(limit)); 
+
+      const pageToShow = Math.min(parseInt(page), maxPage);
+      let question = await Question.aggregate([
+        {
+          $match: {
+            text: key ? { $regex: key, $options: "i" } : { $exists: true },
+          },
+        },
+        {
+          $skip: (parseInt(page) - 1) * parseInt(limit),
+        },
+        {
+          $limit: parseInt(limit),
+        },
+      ]);
+
       return res.status(200).json({
         status: "Success",
+        maxPage: maxPage,
+        currentPage: pageToShow,
         data: question,
       });
     } catch (error) {
