@@ -462,7 +462,6 @@ class adminController {
           .status(404)
           .json({ status: "Failed", message: "Question's not found" });
       }
-      console.log(body);
       await Question.updateOne(
         { _id: new ObjectId(id) },
         {
@@ -516,9 +515,9 @@ class adminController {
 
   async getQuestion(req, res) {
     try {
-      const { page = 1, limit = 30, key } = req.query;
+      const { page = 1, limit, key } = req.query;
       const totalQuestions = await Question.countDocuments({});
-      const maxPage = Math.ceil(totalQuestions / parseInt(limit)); 
+      const maxPage = Math.ceil(totalQuestions / parseInt(limit));
 
       const pageToShow = Math.min(parseInt(page), maxPage);
       let question = await Question.aggregate([
@@ -528,10 +527,10 @@ class adminController {
           },
         },
         {
-          $skip: (parseInt(page) - 1) * parseInt(limit),
+          $skip: limit ? (parseInt(page) - 1) * parseInt(limit) : 0,
         },
         {
-          $limit: parseInt(limit),
+          $limit: limit ? parseInt(limit) : totalQuestions,
         },
       ]);
 
@@ -550,6 +549,8 @@ class adminController {
       });
     }
   }
+
+
 
   async getDetailQuestion(req, res) {
     try {
