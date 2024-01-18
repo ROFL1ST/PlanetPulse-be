@@ -754,86 +754,7 @@ class userControl {
     }
   }
 
-  async getUserStages(req, res) {
-    try {
-      const headers = req.headers;
-      const ObjectId = mongoose.Types.ObjectId;
-      const { id } = jwtDecode(headers.authorization);
-      const data = await UserStages.aggregate([
-        {
-          $match: {
-            id_user: new ObjectId(id),
-          },
-        },
-        {
-          $lookup: {
-            from: "stages",
-            localField: "id_stages",
-            foreignField: "_id",
-            as: "info_stage",
-          },
-        },
-        { $unwind: "$info_stage" },
-        {
-          $project: {
-            _id: 1, // Include other fields you want to keep from UserAcademy
-            // Include fields from the lessons collection
-            id_stages: "$info_stage._id",
-            name: "$info_stage.name",
-            difficulty: "$info_stage.difficulty",
-            createdAt: "$info_stage.createdAt",
-            updatedAt: "$info_stage.updatedAt",
-            // Add more fields as needed
-          },
-        },
-      ]);
-      return res.status(200).json({
-        status: "Success",
-        data: data,
-      });
-    } catch (error) {
-      console.log(error);
-      return res.status(500).json({
-        status: "Failed",
-        message: error,
-      });
-    }
-  }
-
-  async updateUserStages(req, res) {
-    try {
-      const ObjectId = mongoose.Types.ObjectId;
-      const headers = req.headers;
-      const body = req.body;
-      const { id } = req.params;
-      const id_user = jwtDecode(headers.authorization).id;
-      const check = await UserStages.findOne({
-        id_stages: new ObjectId(id),
-        id_user: new ObjectId(id_user),
-      });
-      if (!check) {
-        return res
-          .status(404)
-          .json({ status: "Failed", message: "Stage's not found" });
-      }
-      await UserStages.updateOne(
-        { id_user: new ObjectId(id_user) },
-        {
-          $set: {
-            progress: body.progress,
-            score: body.score,
-          },
-        }
-      );
-      return res.status(200).json({ status: "Success" });
-    } catch (error) {
-      console.log(error);
-      return res.status(500).json({
-        status: "Failed",
-        message: error,
-      });
-    }
-  }
+  
 
   async getUserQuiz(req, res) {
     try {
@@ -859,6 +780,9 @@ class userControl {
           $project: {
             _id: 1, // Include other fields you want to keep from UserAcademy
             // Include fields from the lessons collection
+            correct: 1,
+            wrong: 1,
+            score: 1,
             id_quiz: "$info_quizz._id",
             title: "$info_quizz.title",
             createdAt: "$info_quizz.createdAt",
@@ -897,10 +821,11 @@ class userControl {
           .json({ status: "Failed", message: "Quiz's not found" });
       }
       await UserQuiz.updateOne(
-        { id_user: new ObjectId(id_user) },
+        { id_quiz: new ObjectId(id) },
         {
           $set: {
-            progress: body.progress,
+            correct: body.correct,
+            wrong: body.wrong,
             score: body.score,
           },
         }

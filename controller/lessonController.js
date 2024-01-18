@@ -526,15 +526,7 @@ class LessonController {
           message: "Stage's not found",
         });
       }
-      if (jwt.type == "user") {
-        const check = await UserStages.findOne({ id_user: new ObjectId(jwt.id) });
-        if (!check) {
-          await UserStages.create({
-            id_user: jwt.id,
-            id_stages: stage[0]._id,
-          });
-        }
-      }
+    
       return res.status(200).json({
         status: "Success",
         data: stage,
@@ -724,7 +716,22 @@ class LessonController {
         });
       }
       if (jwt.type == "user") {
-        const check = await UserQuiz.findOne({ id_user: new ObjectId(jwt.id) });
+        const check = await UserQuiz.aggregate([
+          {
+            $match: {
+              $and: [
+                { id_quiz: new ObjectId(id) },
+                { id_user: new ObjectId(jwt.id) },
+              ],
+            },
+          },
+        ]);
+        if (check.length == 0) {
+          await UserQuiz.create({
+            id_user: jwt.id,
+            id_quiz: id,
+          });
+        }
         if (!check) {
           await UserQuiz.create({
             id_user: jwt.id,

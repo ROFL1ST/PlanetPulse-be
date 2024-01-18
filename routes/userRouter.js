@@ -29,8 +29,7 @@ router.get("/academy", jwtMiddleWare, userController.getAcademy);
 router.put("/academy/:id", jwtMiddleWare, userController.updateAcademy);
 router.delete("/academy/:id", jwtMiddleWare, userController.deleteAcademy);
 
-router.get("/stages", userController.getUserStages)
-router.put("/stages/:id", userController.updateUserStages)
+
 router.get("/quiz", userController.getUserQuiz)
 router.put("/quiz/:id", userController.updateUserQuiz)
 // router.get(
