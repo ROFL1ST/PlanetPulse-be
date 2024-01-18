@@ -754,8 +754,6 @@ class userControl {
     }
   }
 
-  
-
   async getUserQuiz(req, res) {
     try {
       const headers = req.headers;
@@ -791,6 +789,63 @@ class userControl {
           },
         },
       ]);
+      return res.status(200).json({
+        status: "Success",
+        data: data,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: error,
+      });
+    }
+  }
+
+  async getDetailUserQuiz(req, res) {
+    try {
+      const headers = req.headers;
+      const ObjectId = mongoose.Types.ObjectId;
+      const id = req.params;
+      const id_user = jwtDecode(headers.authorization).id;
+      const data = await UserQuiz.aggregate([
+        {
+          $match: {
+            $and: [
+              { id_user: new ObjectId(id_user) },
+              { id_quiz: new ObjectId(id) },
+            ],
+          },
+        },
+        {
+          $lookup: {
+            from: "quizzes",
+            localField: "id_quiz",
+            foreignField: "_id",
+            as: "info_quizz",
+          },
+        },
+        { $unwind: "$info_quizz" },
+        {
+          $project: {
+            _id: 1, // Include other fields you want to keep from UserAcademy
+            // Include fields from the lessons collection
+            correct: 1,
+            wrong: 1,
+            score: 1,
+            id_quiz: "$info_quizz._id",
+            title: "$info_quizz.title",
+            createdAt: "$info_quizz.createdAt",
+            updatedAt: "$info_quizz.updatedAt",
+            // Add more fields as needed
+          },
+        },
+      ]);
+      if (data.length == 0) {
+        return res
+          .status(404)
+          .json({ status: "Failed", message: "Data's not found" });
+      }
       return res.status(200).json({
         status: "Success",
         data: data,

@@ -31,6 +31,7 @@ router.delete("/academy/:id", jwtMiddleWare, userController.deleteAcademy);
 
 
 router.get("/quiz", userController.getUserQuiz)
+router.get("/quiz/:id", userController.getDetailUserQuiz)
 router.put("/quiz/:id", userController.updateUserQuiz)
 // router.get(
 //   "/auth/google",
