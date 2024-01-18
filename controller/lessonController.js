@@ -487,6 +487,7 @@ class LessonController {
           $set: {
             title: detail.title,
             content: detail.content,
+            url_videos: detail.url_videos
           },
         }
       );
