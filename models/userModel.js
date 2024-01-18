@@ -154,12 +154,13 @@ const userQuizModel = mongoose.Schema({
     type: mongoose.Types.ObjectId,
     ref: "users",
     required: true,
-    unique: true,
   },
-  progress: {
+  correct: {
     type: Number,
-    min: 0,
-    max: 100,
+    default: 0,
+  },
+  wrong: {
+    type: Number,
     default: 0,
   },
   score: {
@@ -170,32 +171,7 @@ const userQuizModel = mongoose.Schema({
   },
 });
 
-const userStageModel = mongoose.Schema({
-  id_stages: {
-    type: mongoose.Types.ObjectId,
-    ref: "stages",
-    required: true,
-  },
-  id_user: {
-    type: mongoose.Types.ObjectId,
-    ref: "users",
-    required: true,
-    unique: true,
 
-  },
-  progress: {
-    type: Number,
-    min: 0,
-    max: 100,
-    default: 0,
-  },
-  score: {
-    type: Number,
-    min: 0,
-    max: 100,
-    default: 0,
-  },
-});
 
 const log_userModel = mongoose.Schema({
   dateLog: {
@@ -221,7 +197,6 @@ const Verify = mongoose.model("veryfies", verifyModel);
 const Forgot = mongoose.model("forgots", forgotModel);
 const Admin = mongoose.model("admins", adminModel);
 const UserQuiz = mongoose.model("user-quizzes", userQuizModel);
-const UserStages = mongoose.model("user-stages", userStageModel);
 const UserLog = mongoose.model("user-logs", log_userModel);
 
 module.exports = {
@@ -232,6 +207,5 @@ module.exports = {
   Admin,
   UserAcademy,
   UserQuiz,
-  UserStages,
   UserLog,
 };
