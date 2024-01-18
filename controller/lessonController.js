@@ -8,6 +8,7 @@ const {
   StageDetail,
 } = require("../models/lessonModel");
 const { default: mongoose } = require("mongoose");
+const { UserQuiz, UserStages } = require("../models/userModel");
 const cloudinary = require("cloudinary").v2;
 require("dotenv").config();
 cloudinary.config({
@@ -506,6 +507,8 @@ class LessonController {
     try {
       const ObjectId = mongoose.Types.ObjectId;
       const { id } = req.params;
+      const headers = req.headers;
+      const jwt = jwtDecode(headers.authorization);
       const stage = await Stage.aggregate([
         { $match: { id_lesson: new ObjectId(id) } },
         {
@@ -522,6 +525,15 @@ class LessonController {
           status: "Failed",
           message: "Stage's not found",
         });
+      }
+      if (jwt.type == "user") {
+        const check = await UserStages.findOne({ id_user: new ObjectId(jwt.id) });
+        if (!check) {
+          await UserStages.create({
+            id_user: jwt.id,
+            id_stages: stage[0]._id,
+          });
+        }
       }
       return res.status(200).json({
         status: "Success",
@@ -670,6 +682,8 @@ class LessonController {
     try {
       const ObjectId = mongoose.Types.ObjectId;
       let { id } = req.params;
+      const headers = req.headers;
+      const jwt = jwtDecode(headers.authorization);
       const quiz = await Quiz.aggregate([
         { $match: { _id: new ObjectId(id) } },
         {
@@ -708,6 +722,15 @@ class LessonController {
           status: "Failed",
           message: "The requested resource was not found.",
         });
+      }
+      if (jwt.type == "user") {
+        const check = await UserQuiz.findOne({ id_user: new ObjectId(jwt.id) });
+        if (!check) {
+          await UserQuiz.create({
+            id_user: jwt.id,
+            id_quiz: quiz[0]._id,
+          });
+        }
       }
       return res.status(200).json({
         status: "Success",
