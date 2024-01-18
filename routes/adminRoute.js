@@ -21,6 +21,7 @@ router.get("/stagges", adminController.getAllStagges)
 
 
 // question
+
 router.get("/question", adminController.getQuestion);
 router.get("/question/:id", adminController.getDetailQuestion);
 router.put("/question/:id", adminController.updateQuestion);
