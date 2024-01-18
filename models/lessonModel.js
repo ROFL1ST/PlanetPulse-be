@@ -66,13 +66,16 @@ const stages_detailSchema = mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "stages",
     required: true,
-  
   },
   title: {
     type: String,
     required: true,
   },
   content: {
+    type: String,
+    default: "",
+  },
+  url_videos: {
     type: String,
     default: "",
   },
