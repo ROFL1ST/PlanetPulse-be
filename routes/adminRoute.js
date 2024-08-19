@@ -2,13 +2,14 @@ const router = require("express")();
 const passport = require("passport");
 const adminController = require("../controller/adminController");
 const { jwtMiddleWare } = require("../middleware/jwt_middleware");
+const { jwtAdmin } = require("../middleware/jwt_admin");
 
 
 router.post("/register", adminController.registerAdmin)
 router.post("/login", adminController.loginAdmin)
 
 
-router.use(jwtMiddleWare);
+router.use(jwtAdmin);
 router.get("/auth", adminController.auth)
 
 // log

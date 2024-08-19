@@ -357,7 +357,7 @@ class LessonController {
         },
         {
           $set: {
-            name: body.name,
+            title: body.title,
             description: body.description,
             photo_url: body.photo_url,
             public_id: body.public_id,
