@@ -62,7 +62,7 @@ class userControl {
       body.default_color = randomColor;
       let newUser = await User.create(body);
       let kode = crypto.randomBytes(32).toString("hex");
-      const link = `${process.env.MAIL_CLIENT_URL}/user/verify/${kode}`;
+      const link = `${process.env.MAIL_CLIENT_DEPLOY}/user/verify/${kode}`;
       const context = {
         url: link,
       };
