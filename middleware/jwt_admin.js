@@ -22,7 +22,7 @@ async function jwtAdmin(req, res, next) {
       if (!admin) {
         return res.status(404).json({
           status: "Failed",
-          message: "User's not found",
+          message: "Admin's not found",
         });
       }
       req.username = decode.username;
