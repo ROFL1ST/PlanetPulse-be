@@ -3,7 +3,7 @@ const { User, Admin } = require("../models/userModel");
 
 async function jwtAdmin(req, res, next) {
   const { authorization } = req.headers;
-  console.log(authorization);
+  // console.log(authorization);
   
   if (authorization == undefined)
     return res.status(401).json({
