@@ -7,6 +7,7 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { default: jwtDecode } = require("jwt-decode");
 const { Quiz, Stage, Question } = require("../models/lessonModel");
+const { Log } = require("../models/dataModel");
 
 class adminController {
   async registerAdmin(req, res) {
@@ -550,8 +551,6 @@ class adminController {
     }
   }
 
-
-
   async getDetailQuestion(req, res) {
     try {
       const id = req.params.id;
@@ -569,6 +568,254 @@ class adminController {
       res.status(200).json({
         status: "Success",
         data: question,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "Something's wrong",
+        error: error,
+      });
+    }
+  }
+
+  async getLogs(req, res) {
+    try {
+      const { page = 1, limit, key } = req.query;
+      const totalLogs = await Log.countDocuments(
+        key ? { log_activity: { $regex: key, $options: "i" } } : {}
+      );
+      const maxPage = Math.ceil(totalLogs / parseInt(limit));
+      const pageToShow = Math.min(parseInt(page), maxPage);
+      // console.log(key);
+
+      const logs = await Log.aggregate([
+        {
+          $match: {
+            log_activity: key
+              ? { $regex: key, $options: "i" }
+              : { $exists: true },
+          },
+        },
+        {
+          $skip: limit ? (parseInt(page) - 1) * parseInt(limit) : 0,
+        },
+        {
+          $limit: limit ? parseInt(limit) : totalLogs,
+        },
+      ]);
+
+      return res.status(200).json({
+        status: "Success",
+        data: logs,
+        page: pageToShow,
+        maxPage,
+        totalLogs,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "Something's wrong",
+        error: error,
+      });
+    }
+  }
+
+  async logsChart(req, res) {
+    try {
+      const userActivity = await Log.aggregate([
+        {
+          $addFields: {
+            date: { $dateFromString: { dateString: "$time", timezone: "UTC" } },
+          },
+        },
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+            totalUsers: { $sum: 1 },
+          },
+        },
+        {
+          $sort: { _id: 1 }, // Sort results by date in ascending order
+        },
+      ]);
+
+      const sqlSyntax = await Log.aggregate([
+        {
+          $addFields: {
+            date: { $dateFromString: { dateString: "$time", timezone: "UTC" } },
+            dateOnly: {
+              $dateToString: {
+                format: "%Y-%m-%d",
+                date: {
+                  $dateFromString: { dateString: "$time", timezone: "UTC" },
+                },
+              },
+            },
+            queryType: {
+              $switch: {
+                branches: [
+                  {
+                    case: {
+                      $regexMatch: {
+                        input: "$log_activity",
+                        regex: /^select/i,
+                      },
+                    },
+                    then: "SELECT",
+                  },
+                  {
+                    case: {
+                      $regexMatch: {
+                        input: "$log_activity",
+                        regex: /^insert/i,
+                      },
+                    },
+                    then: "INSERT",
+                  },
+                  {
+                    case: {
+                      $regexMatch: {
+                        input: "$log_activity",
+                        regex: /^delete/i,
+                      },
+                    },
+                    then: "DELETE",
+                  },
+                  {
+                    case: {
+                      $regexMatch: { input: "$log_activity", regex: /^alter/i },
+                    },
+                    then: "ALTER",
+                  },
+                ],
+                default: "OTHER",
+              },
+            },
+          },
+        },
+        {
+          $group: {
+            _id: { date: "$dateOnly", queryType: "$queryType" },
+            count: { $sum: 1 },
+          },
+        },
+        {
+          $group: {
+            _id: "$_id.date",
+            queries: {
+              $push: {
+                queryType: "$_id.queryType",
+                count: "$count",
+              },
+            },
+          },
+        },
+        {
+          $sort: { _id: 1 }, // Sort by date
+        },
+      ]);
+
+      const limit = parseInt(req.query.limit) || 30;
+      const page = parseInt(req.query.page) || 1;
+      const totalClients = await Log.countDocuments();
+      const maxPage = Math.ceil(totalClients / limit);
+
+      const activeClients = await Log.aggregate([
+        {
+          $addFields: {
+            date: { $dateFromString: { dateString: "$time", timezone: "UTC" } },
+            dateOnly: {
+              $dateToString: {
+                format: "%Y-%m-%d",
+                date: { $dateFromString: { dateString: "$time" } },
+              },
+            },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              date: "$dateOnly",
+              ip: "$ip_address",
+              machineId: "$machine_id",
+            },
+            activityCount: { $sum: 1 },
+          },
+        },
+        {
+          $group: {
+            _id: "$_id.date",
+            clients: {
+              $push: {
+                ip: "$_id.ip",
+                machineId: "$_id.machineId",
+                activityCount: "$activityCount",
+              },
+            },
+          },
+        },
+        {
+          $addFields: {
+            paginatedClients: {
+              $cond: {
+                if: { $eq: ["$_id", "2024-08-29"] },
+                then: "$clients", // No pagination for specific date
+                else: { $slice: ["$clients", (page - 1) * limit, limit] },
+              },
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            clients: "$paginatedClients",
+          },
+        },
+        {
+          $sort: { _id: 1 },
+        },
+      ]);
+
+      const stateActivity = await Log.aggregate([
+        {
+          $addFields: {
+            date: { $dateFromString: { dateString: "$time", timezone: "UTC" } },
+          },
+        },
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+            totalStates: {
+              $sum: {
+                $cond: [
+                  {
+                    $in: [
+                      "$state",
+                      [" LOG", "ERROR", "FATAL", "STATEMENT", "DETAIL"],
+                    ],
+                  },
+                  1,
+                  0,
+                ],
+              },
+            },
+          },
+        },
+        {
+          $sort: { _id: 1 } 
+        }
+      ]);
+
+      return res.status(200).json({
+        status: "Success",
+        userActivity,
+        sqlSyntax,
+        activeClients,
+        page,
+        maxPage,
+        stateActivity,
       });
     } catch (error) {
       console.log(error);

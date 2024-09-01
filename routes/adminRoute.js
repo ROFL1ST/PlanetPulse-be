@@ -29,4 +29,9 @@ router.put("/question/:id", adminController.updateQuestion);
 router.delete("/question/:id", adminController.deleteQuestion);
 router.post("/question/post", adminController.addQuestion);
 router.post("/question/bulk-post", adminController.addBulkQuestion);
+
+// logs
+
+router.get("/logs", adminController.getLogs)
+router.get("/logs/chart", adminController.logsChart)
 module.exports = { adminRoute: router };
