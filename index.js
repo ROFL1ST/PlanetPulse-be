@@ -15,6 +15,13 @@ app.use(express.json());
   
 
 app.use("/api", router);
+app.use((req, res, next) => {
+  const currentTime = new Date().toISOString();
+  console.log(`[${currentTime}] ${req.method} request to ${req.url}`);
+  next();
+});
+
+
 mongoose
   .connect(uri)
   .then(() => {
@@ -25,6 +32,13 @@ mongoose
   });
 
 
-server.listen(port);
+  // add logs in terminal everytime someone access the server
+
+
+  
+
+server.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
 
 

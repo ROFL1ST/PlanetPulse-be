@@ -758,11 +758,22 @@ class adminController {
         },
         {
           $addFields: {
+            sortedClients: {
+              $cond: {
+                if: { $eq: ["$_id", "2024-08-26"] }, // filter dr paling banyak ke terkecil (asc desc)
+                then: { $sortArray: { input: "$clients", sortBy: { activityCount: -1 } } },
+                else: "$clients",
+              },
+            },
+          },
+        },
+        {
+          $addFields: {
             paginatedClients: {
               $cond: {
                 if: { $eq: ["$_id", "2024-08-29"] },
-                then: "$clients", // No pagination for specific date
-                else: { $slice: ["$clients", (page - 1) * limit, limit] },
+                then: "$clients", // Gk ada pagination buat tanggal 29
+                else: { $slice: ["$sortedClients", (page - 1) * limit, limit] },
               },
             },
           },
@@ -777,6 +788,7 @@ class adminController {
           $sort: { _id: 1 },
         },
       ]);
+      
 
       const stateActivity = await Log.aggregate([
         {
