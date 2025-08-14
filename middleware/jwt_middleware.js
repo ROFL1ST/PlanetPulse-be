@@ -17,11 +17,14 @@ async function jwtMiddleWare(req, res, next) {
       });
     } else {
       const user = await User.findOne({ email: decode.email });
+      const admin = await Admin.findOne({ email: decode.email });
       if (!user) {
-        return res.status(404).json({
-          status: "Failed",
-          message: "User's not found",
-        });
+        if (!admin) {
+          return res.status(404).json({
+            status: "Failed",
+            message: "User or Admin not found",
+          });
+        }
       }
       req.username = decode.username;
       next();

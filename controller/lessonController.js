@@ -107,6 +107,26 @@ class LessonController {
     try {
       const headers = req.headers;
       const ObjectId = mongoose.Types.ObjectId;
+      const type = jwtDecode(headers.authorization).type;
+      if (type != "admin") {
+        return res.status(401).json({
+          status: "Failed",
+          message: "Unauthorized",
+        });
+      }
+      const categoryId = new ObjectId(req.params.id);
+
+      
+      await Lesson.updateMany(
+        { id_category: categoryId },
+        { $unset: { id_category: "" } }
+      );
+
+      await Category.deleteOne({ _id: categoryId });
+      return res.status(200).json({
+        status: "Success",
+        message: "Category has been deleted",
+      });
     } catch (error) {
       console.log(error);
       return res.status(500).json({
@@ -143,7 +163,7 @@ class LessonController {
       const lesson = await Lesson.create({
         title: body.title,
         description: body.description,
-        color_way: body.color_way,
+        // color_way: body.color_way,
         id_category: body.id_category,
         photo_url: body.photo_url,
         public_id: body.public_id,
