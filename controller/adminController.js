@@ -59,6 +59,7 @@ class adminController {
       });
     }
   }
+  
 
   async loginAdmin(req, res) {
     try {
